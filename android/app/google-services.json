@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "850514984483",
+    "project_id": "peminjaman-alat-lab-5f524",
+    "storage_bucket": "peminjaman-alat-lab-5f524.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:850514984483:android:7829c36b8fdf07cd203b96",
+        "android_client_info": {
+          "package_name": "com.example.pbl_peminjamanalatlab"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfo3jhkXOzYLBwhCDljIEUXuTWJBcSa7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
