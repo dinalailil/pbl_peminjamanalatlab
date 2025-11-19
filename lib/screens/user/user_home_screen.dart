@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
-import 'form_peminjaman_screen.dart';
+import 'catalog_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -150,7 +150,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const FormPeminjamanScreen()),
+                      MaterialPageRoute(builder: (context) => const CatalogScreen()),
                     );
                   },
                 ),
