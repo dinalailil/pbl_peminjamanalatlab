@@ -4,12 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // Pastikan sudah: flutter pub add intl
 import 'package:intl/date_symbol_data_local.dart'; 
 import '../../services/auth_service.dart';
-<<<<<<< HEAD
-import 'form_peminjaman_screen.dart';
+
 import 'edit_profile_screen.dart'; // Pastikan file ini ada (meski fiturnya diskip)
-=======
 import 'catalog_screen.dart';
->>>>>>> origin/jak
+
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -159,14 +157,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   iconColor: Colors.purpleAccent,
                   bgColor: const Color(0xFFF3E5F5),
                   onTap: () {
-<<<<<<< HEAD
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const FormPeminjamanScreen()));
-=======
+
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const CatalogScreen()),
                     );
->>>>>>> origin/jak
+
                   },
                 ),
                 
