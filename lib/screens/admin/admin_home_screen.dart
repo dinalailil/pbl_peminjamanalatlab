@@ -2,9 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
+import 'daftar_permintaan_screen.dart';
+import 'history_peminjaman_screen.dart';
+import 'cek_ketersediaan_screen.dart';
 
-class AdminHomeScreen extends StatelessWidget {
+class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
+
+  @override
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
+}
+
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
+  bool _isMenuOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -12,121 +22,103 @@ class AdminHomeScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF6F6F6),
       body: Column(
         children: [
-          // --- 1. HEADER GRADIENT (Admin Style: Red - Purple) ---
-          Container(
-            height: size.height * 0.35,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            height: _isMenuOpen ? size.height * 0.36 : size.height * 0.30,
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFFFF512F), // Orange Kemerahan (Energi/Alert)
-                  Color(0xFFDD2476), // Deep Pink/Red (Otoritas)
+                  Color(0xFF8E78FF),
+                  Color(0xFF764BA2),
                 ],
               ),
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
               ),
             ),
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        Container(
+                          width: 55,
+                          height: 55,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(Icons.person, color: Colors.grey, size: 30),
+                        ),
+                        const SizedBox(width: 15),
                         Expanded(
-                          child: Row(
-                            children: [
-                              // Avatar Admin (Border Emas/Kuning dikit biar beda)
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.amberAccent, width: 2),
-                                ),
-                                child: const Icon(Icons.admin_panel_settings, color: Colors.white),
-                              ),
-                              const SizedBox(width: 12),
-                              
-                              // Nama Admin Dinamis
-                              Expanded(
-                                child: StreamBuilder<DocumentSnapshot>(
-                                  stream: FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(user?.uid)
-                                      .snapshots(),
-                                  builder: (context, snapshot) {
-                                    String namaAdmin = "Admin";
-                                    if (snapshot.hasData && snapshot.data!.exists) {
-                                      var data = snapshot.data!.data() as Map<String, dynamic>;
-                                      namaAdmin = data['nama'] ?? "Admin"; 
-                                    }
-                                    return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Halo, $namaAdmin",
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const Text(
-                                          "Admin Lab", 
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
+                          child: StreamBuilder<DocumentSnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user?.uid)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              String namaUser = "Admin";
+                              if (snapshot.hasData && snapshot.data!.exists) {
+                                var data = snapshot.data!.data() as Map<String, dynamic>;
+                                namaUser = data['nama'] ?? "Admin";
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Halo, Admin $namaUser",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  // Jika menu tertutup, tampilkan slogan. Jika terbuka, tampilkan tanggal kecil
+                                  if (_isMenuOpen)
+                                     const Text(
+                                      "Selasa, 18 November 2025",
+                                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                                    )
+                                ],
+                              );
+                            },
                           ),
                         ),
-                        
+
                         IconButton(
-                          onPressed: () async {
-                            await AuthService().logout();
-                            Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                          onPressed: () {
+                            setState(() => _isMenuOpen = !_isMenuOpen);
                           },
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                        )
+                          icon: Icon(
+                            _isMenuOpen ? Icons.close : Icons.logout,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
                       ],
                     ),
-                    
-                    const Spacer(),
-                    
-                    // Statistik Singkat (Dashboard Admin biasanya butuh ini)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _StatItem(count: "5", label: "Pending"),
-                          _StatItem(count: "12", label: "Dipinjam"),
-                          _StatItem(count: "8", label: "Selesai"),
-                        ],
-                      ),
+
+                    const SizedBox(height: 20), // Jarak antara profil dan tanggal
+
+                    // --- KONTEN BAWAH HEADER (Berubah sesuai Menu) ---
+                    Expanded(
+                      child: _isMenuOpen 
+                      ? _buildDropdownMenu(context) // Tampilan Menu (Gbr Tengah)
+                      : _buildDefaultHeaderContent(), // Tampilan Normal (Gbr Kiri)
                     ),
                   ],
                 ),
@@ -134,157 +126,206 @@ class AdminHomeScreen extends StatelessWidget {
             ),
           ),
 
-          // --- 2. MENU GRID ADMIN ---
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Panel Kontrol",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  Expanded(
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      children: [
-                        // 1. KONFIRMASI PEMINJAMAN (Penting)
-                        _buildMenuCard(
-                          icon: Icons.playlist_add_check, 
-                          title: "Konfirmasi\nPeminjaman",
-                          color: Colors.orange, // Orange = Butuh Tindakan
-                          onTap: () {
-                             ScaffoldMessenger.of(context).showSnackBar(
-                               const SnackBar(content: Text("Buka List Request Peminjaman"))
-                             );
-                          },
-                        ),
-                        
-                        // 2. KONFIRMASI PENGEMBALIAN
-                        _buildMenuCard(
-                          icon: Icons.assignment_turned_in,
-                          title: "Konfirmasi\nPengembalian",
-                          color: Colors.green, // Hijau = Selesai/Verifikasi
-                          onTap: () {
-                             ScaffoldMessenger.of(context).showSnackBar(
-                               const SnackBar(content: Text("Buka List Pengembalian Barang"))
-                             );
-                          },
-                        ),
-                        
-                        // 3. HISTORY SEMUA
-                        _buildMenuCard(
-                          icon: Icons.history_edu, // Icon History yang lebih formal
-                          title: "Semua\nRiwayat",
-                          color: Colors.blueGrey,
-                          onTap: () {},
-                        ),
-                        
-                        // 4. PROFIL ADMIN / PENGATURAN
-                        _buildMenuCard(
-                          icon: Icons.manage_accounts,
-                          title: "Profil\nAdmin",
-                          color: Colors.purple,
-                          onTap: () {},
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                _buildFeatureCard(
+                  icon: Icons.check_circle,
+                  title: "Daftar Permintaan",
+                  iconColor: Colors.green,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DaftarPermintaanScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                _buildFeatureCard(
+                  icon: Icons.history,
+                  title: "History Peminjaman",
+                  iconColor: Colors.black,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HistoryPeminjamanScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                _buildFeatureCard(
+                  icon: Icons.inventory_2,
+                  title: "Cek Ketersediaan Barang",
+                  iconColor: Colors.orange,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CekKetersediaanScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ),
+          )
         ],
       ),
     );
   }
 
-  // Widget Helper untuk Kartu Menu
-  Widget _buildMenuCard({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              spreadRadius: 2,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
+  Widget _buildDefaultHeaderContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Tanggal Pill
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.calendar_today, color: Colors.white, size: 14),
+              SizedBox(width: 8),
+              Text(
+                "Selasa, 18 November 2025",
+                style: TextStyle(color: Colors.white, fontSize: 12),
               ),
-              child: Icon(icon, color: color, size: 32),
-            ),
-            const SizedBox(height: 12),
+            ],
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildDropdownMenu(BuildContext context) {
+    return Column(
+      children: [
+        _buildMenuItem(
+          title: "Log Out",
+          onTap: () {
+            _showLogoutDialog(context);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuItem({required String title, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Row(
+          children: [
             Text(
               title,
-              textAlign: TextAlign.center, // Agar teks 2 baris rapi di tengah
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Colors.black87,
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
+            const Spacer(),
           ],
         ),
       ),
     );
   }
-}
 
-// Widget Helper Kecil untuk Statistik di Header
-class _StatItem extends StatelessWidget {
-  final String count;
-  final String label;
-  const _StatItem({required this.count, required this.label});
+   void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Konfirmasi Logout"),
+          content: const Text("Apakah Anda yakin ingin keluar dari aplikasi?"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Batal", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await AuthService().logout();
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text("Ya, Keluar", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          count,
-          style: const TextStyle(
-            color: Colors.white, 
-            fontWeight: FontWeight.bold, 
-            fontSize: 18
-          ),
+  Widget _divider() => const Divider(color: Colors.white54, thickness: 0.5);
+
+  Widget _buildFeatureCard({
+    required IconData icon,
+    required String title,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            )
+          ],
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white70, 
-            fontSize: 12
-          ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 32),
+            ),
+            const SizedBox(width: 20),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            )
+          ],
         ),
-      ],
+      ),
     );
   }
 }
