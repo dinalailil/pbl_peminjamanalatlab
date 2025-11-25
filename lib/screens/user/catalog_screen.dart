@@ -1,5 +1,7 @@
+// catalog_screen.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'detail_barang_modal.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({Key? key}) : super(key: key);
@@ -12,12 +14,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
   String selectedFilter = "Semua";
   String searchQuery = "";
 
- 
   Stream<QuerySnapshot> getFilteredStream() {
     if (selectedFilter == "Semua") {
-      return FirebaseFirestore.instance
-          .collection('alat')
-          .snapshots();
+      return FirebaseFirestore.instance.collection('alat').snapshots();
     }
 
     return FirebaseFirestore.instance
@@ -28,10 +27,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
-   return Scaffold(
-  backgroundColor: const Color(0xfff3f3f3),
-  body: Column(
-
+    return Scaffold(
+      backgroundColor: const Color(0xfff3f3f3),
+      body: Column(
         children: [
           // HEADER
           Container(
@@ -50,33 +48,30 @@ class _CatalogScreenState extends State<CatalogScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-             Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    const Text(
-      "Katalog Barang",
-      style: TextStyle(
-        fontSize: 26,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
-    ),
-
-    // Tombol Back
-    IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white),
-      onPressed: () {
-        Navigator.pop(context);
-      },
-    )
-  ],
-),
+                // Title + right back icon
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Katalog Barang",
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    )
+                  ],
+                ),
 
                 const SizedBox(height: 15),
 
-                // SEARCH BOX
+                // search
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
@@ -84,7 +79,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   child: TextField(
                     decoration: const InputDecoration(
                       hintText: "Search",
-                      hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                       icon: Icon(Icons.search),
                     ),
@@ -98,7 +92,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                 const SizedBox(height: 15),
 
-                // FILTER TOGGLE
+                // filter chips
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -139,7 +133,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
           const SizedBox(height: 15),
 
-          // LIST ITEM
+          // list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: getFilteredStream(),
@@ -150,21 +144,19 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                 var data = snapshot.data!.docs;
 
-                // FILTER SEARCH
                 if (searchQuery.isNotEmpty) {
                   data = data
                       .where((item) =>
-                          item['nama'].toString().toLowerCase().contains(searchQuery))
+                          (item.data() as Map<String, dynamic>)['nama']
+                              .toString()
+                              .toLowerCase()
+                              .contains(searchQuery))
                       .toList();
                 }
 
-                // JIKA DATA KOSONG
                 if (data.isEmpty) {
                   return const Center(
-                    child: Text(
-                      "Tidak ada barang",
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    child: Text("Tidak ada barang", style: TextStyle(fontSize: 16)),
                   );
                 }
 
@@ -179,78 +171,73 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   itemCount: data.length,
                   itemBuilder: (context, index) {
                     var item = data[index];
+                    final map = item.data() as Map<String, dynamic>;
 
-                    String nama = item['nama'] ?? "-";
-                    String kode = item['kode'] ?? "-";
-                    String status = item['status'] ?? "-";
-                    String? gambar = item['gambar'];
+                    String nama = map['nama'] ?? "-";
+                    String kode = map['kode'] ?? "-";
+                    String status = map['status'] ?? "-";
+                    int jumlah = (map['jumlah'] is num) ? (map['jumlah'] as num).toInt() : 0;
+                    String? gambar = map['gambar'];
 
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12.withOpacity(.05),
-                            spreadRadius: 2,
-                            blurRadius: 8,
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: gambar != null
-                                ? Image.network(gambar!)
-                                : const Icon(
-                                    Icons.image,
-                                    size: 70,
-                                    color: Colors.grey,
-                                  ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            nama,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                    return InkWell(
+                      onTap: () {
+                        // Tampilkan modal detail (floating card)
+                        showDialog(
+                          context: context,
+                          builder: (_) => DetailBarangModal(data: item),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12.withOpacity(.05),
+                              spreadRadius: 2,
+                              blurRadius: 8,
+                            )
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: gambar != null
+                                  ? Image.network(gambar, fit: BoxFit.contain)
+                                  : const Icon(Icons.image, size: 70, color: Colors.grey),
                             ),
-                          ),
-                          Text(
-                            "Kode: $kode",
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
+                            const SizedBox(height: 8),
+                            Text(
+                              nama,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-
-                          // BADGE STATUS
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: status == "Tersedia"
-                                  ? Colors.green.shade100
-                                  : Colors.red.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              status,
-                              style: TextStyle(
-                                color: status == "Tersedia"
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                            Text("Kode: $kode", style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                            const SizedBox(height: 6),
+                            Text("Stok: $jumlah", style: TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: status.toString().toLowerCase() == "tersedia"
+                                    ? Colors.green.shade100
+                                    : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                status,
+                                style: TextStyle(
+                                  color: status.toString().toLowerCase() == "tersedia"
+                                      ? Colors.green.shade700
+                                      : Colors.red.shade700,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
