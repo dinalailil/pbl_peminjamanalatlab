@@ -16,12 +16,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final size = MediaQuery.of(context).size;
-
+    
     return Scaffold(
       body: Stack(
         children: [
-          // 1. BACKGROUND GRADIENT (Modern Blue-Purple)
+          // 1. BACKGROUND GRADIENT
           Container(
             height: double.infinity,
             width: double.infinity,
@@ -30,14 +29,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF667EEA), // Royal Blue lembut
-                  Color(0xFF764BA2), // Deep Purple
+                  Color(0xFF667EEA), // Ungu Muda
+                  Color(0xFF764BA2), // Merah Tua
                 ],
               ),
             ),
           ),
 
-          // 2. DEKORASI LINGKARAN (Agar tidak sepi)
+          // 2. DEKORASI LINGKARAN
           Positioned(
             top: -50,
             left: -50,
@@ -63,170 +62,168 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          // 3. KONTEN UTAMA (Center Card)
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // --- JUDUL & LOGO ---
-                  const Icon(Icons.school_rounded, size: 60, color: Colors.white),
-                  const SizedBox(height: 10),
-                  Text(
-                    authProvider.isLogin ? "Hello Again!" : "Join Us!",
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 1.2,
-                    ),
+          // 3. KONTEN UTAMA (SOLUSI OVERFLOW & CENTER)
+          // Gunakan LayoutBuilder agar konten tahu tinggi layar
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                // ConstrainedBox memaksa tinggi minimal setinggi layar
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    authProvider.isLogin 
-                      ? "Welcome back, you've been missed!" 
-                      : "Create an account to get started",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // --- CARD FORM (GLASS EFFECT) ---
-                  Container(
-                    padding: const EdgeInsets.all(30),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center, // Rata Tengah Vertikal
+                      children: [
+                        // --- LOGO SAJA (Tanpa Teks) ---
+                        Image.asset(
+                          'images/peminjamanlab.png', 
+                          width: 180, // Ukuran pas (tidak terlalu besar/kecil)
+                          height: 180,
                         ),
-                      ],
-                    ),
-                    child: Form(
-                      key: authProvider.formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Judul Kecil di dalam Card
-                          Text(
-                            authProvider.isLogin ? "Login" : "Register",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
+                        
+                        const SizedBox(height: 10), // Jarak aman ke Form
+
+                        // --- KARTU FORM ---
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Form(
+                            key: authProvider.formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Judul Kecil di dalam Card
+                                Text(
+                                  authProvider.isLogin ? "Silakan Masuk" : "Buat Akun Baru",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Field Nama (Hanya saat Register)
+                                if (!authProvider.isLogin) ...[
+                                  TextfieldNamaWidget(controller: authProvider.namaCtrl),
+                                  const SizedBox(height: 16),
+                                ],
+
+                                // Field Email
+                                TextfieldEmailWidget(controller: authProvider.emailCtrl),
+                                const SizedBox(height: 16),
+
+                                // Field Password
+                                TextfieldPasswordWidget(controller: authProvider.passCtrl),
+                                
+                                const SizedBox(height: 10),
+                                
+                                // Lupa Password
+                                if (authProvider.isLogin)
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      "Lupa Password?",
+                                      style: TextStyle(
+                                        color: const Color(0xFF8E78FF),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13
+                                      ),
+                                    ),
+                                  ),
+
+                                const SizedBox(height: 30),
+
+                                // Tombol Utama
+                                authProvider.isLoading
+                                    ? const Center(child: CircularProgressIndicator())
+                                    : Container(
+                                        width: double.infinity,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [Color(0xFF8E78FF), Color(0xFFDD2476)],
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFFDD2476).withOpacity(0.4),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 5),
+                                            )
+                                          ],
+                                        ),
+                                        child: ElevatedButton(
+                                          onPressed: () => authProvider.submit(context),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.transparent,
+                                            shadowColor: Colors.transparent,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            authProvider.isLogin ? "Masuk" : "Daftar",
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                        ),
 
-                          // Field Nama
-                          if (!authProvider.isLogin) ...[
-                            TextfieldNamaWidget(controller: authProvider.namaCtrl),
-                            const SizedBox(height: 16),
-                          ],
+                        const SizedBox(height: 25),
 
-                          // Field Email
-                          TextfieldEmailWidget(controller: authProvider.emailCtrl),
-                          const SizedBox(height: 16),
-
-                          // Field Password
-                          TextfieldPasswordWidget(controller: authProvider.passCtrl),
-                          
-                          const SizedBox(height: 10),
-                          // Lupa Password (Hiasan saja dulu)
-                          if (authProvider.isLogin)
-                            Align(
-                              alignment: Alignment.centerRight,
+                        // Toggle Text
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              authProvider.isLogin 
+                                ? "Belum punya akun? " 
+                                : "Sudah punya akun? ",
+                              style: const TextStyle(color: Colors.white70, fontSize: 15),
+                            ),
+                            GestureDetector(
+                              onTap: () => authProvider.toggleLogin(),
                               child: Text(
-                                "Forgot Password?",
-                                style: TextStyle(
-                                  color: Colors.blue[700],
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13
+                                authProvider.isLogin ? "Daftar Sekarang" : "Login Disini",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.white,
                                 ),
                               ),
                             ),
-
-                          const SizedBox(height: 30),
-
-                          // --- TOMBOL UTAMA (GRADIENT BUTTON) ---
-                          authProvider.isLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : Container(
-                                  width: double.infinity,
-                                  height: 55,
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF667EEA).withOpacity(0.4),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 5),
-                                      )
-                                    ],
-                                  ),
-                                  child: ElevatedButton(
-                                    onPressed: () => authProvider.submit(context),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      shadowColor: Colors.transparent,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      authProvider.isLogin ? "Sign In" : "Sign Up",
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                        ],
-                      ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
-
-                  const SizedBox(height: 30),
-
-                  // --- TOGGLE LOGIN/REGISTER ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        authProvider.isLogin 
-                          ? "Not a member? " 
-                          : "Already have an account? ",
-                        style: const TextStyle(color: Colors.white70, fontSize: 15),
-                      ),
-                      GestureDetector(
-                        onTap: () => authProvider.toggleLogin(),
-                        child: Text(
-                          authProvider.isLogin ? "Register now" : "Login",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            decoration: TextDecoration.underline, // Garis bawah biar jelas
-                            decorationColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            }
           ),
         ],
       ),
