@@ -17,7 +17,9 @@ class _FormPeminjamanModalState extends State<FormPeminjamanModal> {
   final TextEditingController namaController = TextEditingController();
   DateTime? tglPinjam;
   DateTime? tglKembali;
+
   bool loading = false;
+  String status = ""; // <-- STATUS DITAMBAHKAN
 
   Future<void> pickDate(BuildContext c, bool isPinjam) async {
     final now = DateTime.now();
@@ -37,55 +39,42 @@ class _FormPeminjamanModalState extends State<FormPeminjamanModal> {
   Future<void> submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (tglPinjam == null || tglKembali == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pilih tanggal pinjam & kembali")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Pilih tanggal pinjam & kembali"))
+      );
       return;
     }
 
     setState(() => loading = true);
 
-    final alatRef = FirebaseFirestore.instance.collection('alat').doc(widget.data.id);
     final peminjamanRef = FirebaseFirestore.instance.collection('peminjaman');
 
     try {
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snap = await transaction.get(alatRef);
-        final map = snap.data() as Map<String, dynamic>? ?? {};
-        final curr = (map['jumlah'] is num) ? (map['jumlah'] as num).toInt() : 0;
 
-        if (curr <= 0) {
-          throw Exception("Stok tidak cukup");
-        }
-
-        final newJumlah = curr - 1;
-
-        // buat doc peminjaman (sementara inside transaction)
-        final peminjamanDoc = peminjamanRef.doc();
-        transaction.set(peminjamanDoc, {
-          "id_peminjam": idController.text,
-          "nama_peminjam": namaController.text,
-          "kode_barang": widget.data['kode'],
-          "nama_barang": widget.data['nama'],
-          "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
-          "tgl_kembali": Timestamp.fromDate(tglKembali!),
-          "status": "Menunggu Konfirmasi",
-          "created_at": FieldValue.serverTimestamp(),
-        });
-
-        // update stok alat
-        transaction.update(alatRef, {
-          "jumlah": newJumlah,
-          "status": newJumlah == 0 ? "Dipinjam" : "Tersedia",
-        });
+      // SIMPAN DATA PEMINJAMAN
+      await peminjamanRef.add({
+        "id_peminjam": idController.text,
+        "nama_peminjam": namaController.text,
+        "kode_barang": widget.data['kode'],
+        "nama_barang": widget.data['nama'],
+        "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
+        "tgl_kembali": Timestamp.fromDate(tglKembali!),
+        "status": "Diajukan",
+        "created_at": FieldValue.serverTimestamp(),
       });
 
-      // selesai
-      if (mounted) {
-        Navigator.of(context).pop(); // close bottom sheet
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil mengajukan peminjaman")));
-      }
+      setState(() {
+        status = "Diajukan"; // <-- tampilkan status
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Peminjaman berhasil diajukan"))
+      );
+
     } catch (e) {
-      // error handling
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: ${e.toString()}")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal: ${e.toString()}"))
+      );
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -97,80 +86,138 @@ class _FormPeminjamanModalState extends State<FormPeminjamanModal> {
     final kode = map['kode'] ?? "-";
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
+      initialChildSize: 0.65,
       maxChildSize: 0.95,
+      minChildSize: 0.55,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.transparent,
-          ),
+          color: Colors.transparent,
           child: SingleChildScrollView(
             controller: scrollController,
             child: Center(
               child: Container(
-                margin: const EdgeInsets.only(top: 16),
-                padding: const EdgeInsets.all(18),
-                width: MediaQuery.of(context).size.width * 0.94,
+                margin: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.all(20),
+                width: MediaQuery.of(context).size.width * 0.92,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                 ),
+
                 child: Form(
                   key: _formKey,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+
+                      // HEADER
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text("Formulir Peminjaman Alat", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Text(
+                            "Formulir Peminjaman Alat",
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                           IconButton(
                             icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () => Navigator.pop(context),
                           )
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      Text("Kode $kode", style: const TextStyle(color: Colors.grey)),
-                      const SizedBox(height: 12),
 
+                      Text("Kode $kode", style: const TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 20),
+
+                      // FORM
                       TextFormField(
                         controller: idController,
                         decoration: const InputDecoration(labelText: "ID Peminjam"),
-                        validator: (v) => v == null || v.isEmpty ? "Isi ID" : null,
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: namaController,
-                        decoration: const InputDecoration(labelText: "Nama Peminjam"),
-                        validator: (v) => v == null || v.isEmpty ? "Isi nama" : null,
+                        validator: (v) => v!.isEmpty ? "Isi ID" : null,
                       ),
                       const SizedBox(height: 8),
 
-                      // tanggal pinjam
+                      TextFormField(
+                        controller: namaController,
+                        decoration: const InputDecoration(labelText: "Nama Peminjam"),
+                        validator: (v) => v!.isEmpty ? "Isi Nama" : null,
+                      ),
+
+                      const SizedBox(height: 10),
+
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(tglPinjam == null ? "Tanggal Pinjam" : "${tglPinjam!.day}-${tglPinjam!.month}-${tglPinjam!.year}"),
+                        title: Text(
+                          tglPinjam == null
+                              ? "Tanggal Pinjam"
+                              : "${tglPinjam!.day}/${tglPinjam!.month}/${tglPinjam!.year}",
+                        ),
                         trailing: const Icon(Icons.calendar_today),
                         onTap: () => pickDate(context, true),
                       ),
-                      const SizedBox(height: 6),
+
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(tglKembali == null ? "Tanggal Kembali" : "${tglKembali!.day}-${tglKembali!.month}-${tglKembali!.year}"),
+                        title: Text(
+                          tglKembali == null
+                              ? "Tanggal Kembali"
+                              : "${tglKembali!.day}/${tglKembali!.month}/${tglKembali!.year}",
+                        ),
                         trailing: const Icon(Icons.calendar_today),
                         onTap: () => pickDate(context, false),
                       ),
 
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
 
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: loading ? null : submit,
-                          child: Text(loading ? "Loading..." : "Kirim"),
+                      // === STATUS DI ATAS TOMBOL ===
+                      if (status.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            "Status : $status",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
                         ),
+
+                      // BUTTONS
+                      Row(
+                        children: [
+
+                          // BATAL
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade300,
+                                foregroundColor: Colors.black87,
+                              ),
+                              child: const Text("Batal"),
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          // KIRIM
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: loading ? null : submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: Text(loading ? "Loading..." : "Kirim"),
+                            ),
+                          ),
+                        ],
                       ),
+
                     ],
                   ),
                 ),
