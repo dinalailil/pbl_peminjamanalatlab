@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // Pastikan sudah: flutter pub add intl
+import 'package:intl/date_symbol_data_local.dart'; 
 import '../../services/auth_service.dart';
-import 'form_peminjaman_screen.dart';
+
+import 'edit_profile_screen.dart'; // Pastikan file ini ada (meski fiturnya diskip)
+import 'catalog_screen.dart';
+
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -12,8 +17,23 @@ class UserHomeScreen extends StatefulWidget {
 }
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
-  // State untuk mengecek apakah menu sedang terbuka atau tertutup
+  // State menu terbuka/tutup
   bool _isMenuOpen = false;
+  
+  // Variabel tanggal hari ini
+  String _tanggalHariIni = "";
+
+  @override
+  void initState() {
+    super.initState();
+    // Inisialisasi Format Tanggal Bahasa Indonesia
+    initializeDateFormatting('id_ID', null).then((_) {
+      setState(() {
+        // Format: "Selasa, 25 November 2025"
+        _tanggalHariIni = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(DateTime.now());
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,21 +44,18 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       backgroundColor: const Color(0xFFF5F5F5), // Background abu sangat muda
       body: Column(
         children: [
-          // --- 1. HEADER DINAMIS (Sesuai Figma) ---
+          // --- 1. HEADER DINAMIS (UNGU-MERAH) ---
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300), // Animasi halus
+            duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             width: double.infinity,
-            // Jika menu buka, header agak lebih tinggi sedikit biar muat listnya
+            // Tinggi header menyesuaikan menu buka/tutup
             height: _isMenuOpen ? size.height * 0.55 : size.height * 0.35,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8E78FF), // Ungu muda (atas)
-                  Color(0xFF764BA2), // Ungu tua (bawah)
-                ],
+                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
               ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(40),
@@ -51,10 +68,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // --- BARIS ATAS (Avatar + Nama + Tombol Menu) ---
+                    // --- BARIS ATAS: AVATAR + NAMA + MENU ---
                     Row(
                       children: [
-                        // Avatar
+                        // Avatar Lingkaran
                         Container(
                           width: 55,
                           height: 55,
@@ -67,13 +84,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         ),
                         const SizedBox(width: 15),
                         
-                        // Stream Nama User
+                        // Nama User dari Firestore
                         Expanded(
                           child: StreamBuilder<DocumentSnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(user?.uid)
-                                .snapshots(),
+                            stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
                             builder: (context, snapshot) {
                               String namaUser = "Loading...";
                               if (snapshot.hasData && snapshot.data!.exists) {
@@ -85,18 +99,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                 children: [
                                   Text(
                                     "Halo $namaUser",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  // Jika menu tertutup, tampilkan slogan. Jika terbuka, tampilkan tanggal kecil
+                                  // Tampilkan tanggal kecil jika menu terbuka
                                   if (_isMenuOpen)
-                                     const Text(
-                                      "Selasa, 18 November 2025",
-                                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                                     Text(
+                                      _tanggalHariIni, 
+                                      style: const TextStyle(color: Colors.white70, fontSize: 12),
                                     )
                                 ],
                               );
@@ -104,29 +114,28 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           ),
                         ),
 
-                        // Tombol Burger Menu (Untuk Buka/Tutup)
+                        // Tombol Burger Menu
                         IconButton(
                           onPressed: () {
                             setState(() {
                               _isMenuOpen = !_isMenuOpen;
                             });
                           },
-                          icon: Icon(
-                            _isMenuOpen ? Icons.close : Icons.menu, // Ikon berubah
-                            color: Colors.white,
-                            size: 30,
-                          ),
+                          icon: Icon(_isMenuOpen ? Icons.close : Icons.menu, color: Colors.white, size: 30),
                         )
                       ],
                     ),
 
                     const SizedBox(height: 20),
 
-                    // --- KONTEN BAWAH HEADER (Berubah sesuai Menu) ---
+                    // --- KONTEN BAWAH HEADER (Scrollable agar tidak error overflow) ---
                     Expanded(
-                      child: _isMenuOpen 
-                      ? _buildDropdownMenu(context) // Tampilan Menu (Gbr Tengah)
-                      : _buildDefaultHeaderContent(), // Tampilan Normal (Gbr Kiri)
+                      child: SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(), // Scroll otomatis, user ga usah scroll
+                        child: _isMenuOpen 
+                          ? _buildDropdownMenu(context) 
+                          : _buildDefaultHeaderContent(),
+                      ),
                     ),
                   ],
                 ),
@@ -134,39 +143,40 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             ),
           ),
 
-          // --- 2. BODY MENU UTAMA (Card Horizontal) ---
+          // --- 2. BODY MENU UTAMA (KARTU PUTIH) ---
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
                 const SizedBox(height: 10),
                 
-                // Tombol Peminjaman
+                // KARTU PEMINJAMAN
                 _buildWideCard(
                   icon: Icons.edit_document,
                   title: "Peminjaman",
                   iconColor: Colors.purpleAccent,
-                  bgColor: const Color(0xFFF3E5F5), // Ungu pudar background icon
+                  bgColor: const Color(0xFFF3E5F5),
                   onTap: () {
+
+                    
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const FormPeminjamanScreen()),
+                      MaterialPageRoute(builder: (context) => const CatalogScreen()),
                     );
+
                   },
                 ),
-
+                
                 const SizedBox(height: 20),
-
-                // Tombol Pengembalian
+                
+                // KARTU PENGEMBALIAN
                 _buildWideCard(
-                  icon: Icons.assignment_return, // Ikon kotak balik
+                  icon: Icons.assignment_return,
                   title: "Pengembalian",
                   iconColor: Colors.orange,
-                  bgColor: const Color(0xFFFFF3E0), // Orange pudar background icon
+                  bgColor: const Color(0xFFFFF3E0),
                   onTap: () {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Masuk ke Form Pengembalian"))
-                     );
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Masuk ke Form Pengembalian")));
                   },
                 ),
               ],
@@ -177,32 +187,25 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // --- WIDGET: Tampilan Header Normal (Kiri) ---
+  // Widget Tampilan Normal (Tanggal Besar)
   Widget _buildDefaultHeaderContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
-          "Mau pinjam apa hari ini?",
-          style: TextStyle(color: Colors.white, fontSize: 14),
-        ),
+        const Text("Mau pinjam apa hari ini?", style: TextStyle(color: Colors.white, fontSize: 14)),
         const SizedBox(height: 15),
-        // Tanggal Pill
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Row(
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.calendar_today, color: Colors.white, size: 14),
-              SizedBox(width: 8),
+              const Icon(Icons.calendar_today, color: Colors.white, size: 14),
+              const SizedBox(width: 8),
               Text(
-                "Selasa, 18 November 2025",
-                style: TextStyle(color: Colors.white, fontSize: 12),
+                _tanggalHariIni.isEmpty ? "Memuat..." : _tanggalHariIni, // Tanggal Realtime
+                style: const TextStyle(color: Colors.white, fontSize: 12)
               ),
             ],
           ),
@@ -211,29 +214,80 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // --- WIDGET: Tampilan Dropdown Menu (Tengah) ---
+  // Widget Menu Dropdown (Ubah Profil, History, Logout)
   Widget _buildDropdownMenu(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildMenuItem(title: "Ubah Profil", onTap: () {}),
+        // 1. Ubah Profil
+        _buildMenuItem(
+          title: "Ubah Profil", 
+          onTap: () {
+            // Tutup menu
+            setState(() => _isMenuOpen = false);
+            // Pindah halaman (Pastikan edit_profile_screen.dart ada, meski kosong isinya gpp)
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()));
+          }
+        ),
         _buildDivider(),
-        _buildMenuItem(title: "History", onTap: () {}),
+        
+        // 2. History
+        _buildMenuItem(
+          title: "History", 
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur History segera hadir!")));
+          }
+        ),
         _buildDivider(),
+        
+        // 3. Log Out (DENGAN KONFIRMASI)
         _buildMenuItem(
           title: "Log Out", 
-          onTap: () async {
-            await AuthService().logout();
-            if (context.mounted) {
-              Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-            }
+          onTap: () {
+            // Panggil Dialog Konfirmasi Logout
+            _showLogoutDialog(context);
           }
         ),
       ],
     );
   }
 
-  // Helper item menu text
+  // FUNGSI DIALOG KONFIRMASI LOGOUT
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Konfirmasi Logout"),
+          content: const Text("Apakah Anda yakin ingin keluar dari aplikasi?"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // Batal
+              child: const Text("Batal", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context); // Tutup dialog
+                await AuthService().logout(); // Logout Firebase
+                if (context.mounted) {
+                  // Kembali ke Login & Hapus history navigasi
+                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text("Ya, Keluar", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Helper Widget Item Menu Teks
   Widget _buildMenuItem({required String title, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
@@ -241,78 +295,41 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Row(
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white, 
-                fontSize: 16, 
-                fontWeight: FontWeight.w600
-              ),
-            ),
-            const Spacer(), // Biar text di kiri full
+            Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            const Spacer(),
           ],
         ),
       ),
     );
   }
 
-  // Helper garis putih tipis
+  // Helper Garis Putih Tipis
   Widget _buildDivider() {
     return const Divider(color: Colors.white54, thickness: 0.5);
   }
 
-  // --- WIDGET: Card Besar Horizontal (Peminjaman & Pengembalian) ---
-  Widget _buildWideCard({
-    required IconData icon, 
-    required String title, 
-    required Color iconColor, 
-    required Color bgColor,
-    required VoidCallback onTap
-  }) {
+  // Helper Widget Kartu Besar (Peminjaman/Pengembalian)
+  Widget _buildWideCard({required IconData icon, required String title, required Color iconColor, required Color bgColor, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            )
-          ]
+          color: Colors.white, borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))]
         ),
         child: Row(
           children: [
-            // Ikon Lingkaran Besar di Kiri
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: iconColor, // Warna lingkaran ungu/orange
-                shape: BoxShape.circle,
-                boxShadow: [
-                   BoxShadow(
-                    color: iconColor.withOpacity(0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3)
-                   )
-                ]
+                color: iconColor, shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: iconColor.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 3))]
               ),
               child: Icon(icon, color: Colors.white, size: 30),
             ),
             const SizedBox(width: 20),
-            
-            // Teks Judul
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20, // Font besar sesuai figma
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
+            Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
           ],
         ),
       ),

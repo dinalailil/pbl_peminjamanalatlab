@@ -7,6 +7,7 @@ import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart'; // Hanya Login Screen
 import 'screens/user/user_home_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
+import 'screens/auth/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,13 +27,13 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Aplikasi Absensi',
+        title: 'Aplikasi Peminjaman',
         theme: ThemeData(
           primarySwatch: Colors.green, // Ganti tema jadi hijau
           useMaterial3: false, 
         ),
-        // Halaman pertama tetap LoginScreen
-        home: const LoginScreen(),
+        // Halaman pertama splash screen
+        home: const SplashScreen(),
         
         // Daftar Rute (Register HILANG)
         routes: {
