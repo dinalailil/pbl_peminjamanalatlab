@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
 import 'catalog_screen.dart';
+import 'pengembalian_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -163,11 +164,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   title: "Pengembalian",
                   iconColor: Colors.orange,
                   bgColor: const Color(0xFFFFF3E0), // Orange pudar background icon
-                  onTap: () {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Masuk ke Form Pengembalian"))
-                     );
-                  },
+                 onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const PengembalianScreen()),
+  );
+}
+
                 ),
               ],
             ),
