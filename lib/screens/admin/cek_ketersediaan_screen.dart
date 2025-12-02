@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CekKetersediaanScreen extends StatelessWidget {
   const CekKetersediaanScreen({super.key});
+
+  int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,10 +27,7 @@ class CekKetersediaanScreen extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8E78FF),
-                  Color(0xFF764BA2),
-                ],
+                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
               ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(40),
@@ -31,14 +38,15 @@ class CekKetersediaanScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Row(
                       children: [
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back_ios,
-                              color: Colors.white),
+                          icon: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),
@@ -58,34 +66,61 @@ class CekKetersediaanScreen extends StatelessWidget {
             ),
           ),
 
-          // ================== LIST ==================
+          // ================== GRID LIST FIRESTORE ==================
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                _buildKetersediaanCard(
-                  avatarColor: Colors.blue.shade300,
-                  kode: "",
-                  tanggal: "",
-                  withText: false,
-                ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('alat').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Terjadi kesalahan..."));
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                const SizedBox(height: 20),
+                final data = snapshot.data!.docs;
 
-                _buildKetersediaanCard(
-                  avatarColor: Colors.red.shade300,
-                  kode: "Kode Alt002",
-                  tanggal: "26 Okt 2025 - 27 Okt 2025",
-                ),
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                        ),
+                    itemCount: data.length,
+                    itemBuilder: (context, index) {
+                      final item = data[index];
+                      final map = (item.data() as Map<String, dynamic>?) ?? {};
 
-                const SizedBox(height: 20),
+                      // Debug print to inspect document fields at runtime
+                      debugPrint('alat doc ${item.id}: $map');
 
-                _buildKetersediaanCard(
-                  avatarColor: Colors.orange.shade300,
-                  kode: "Kode Alt001",
-                  tanggal: "01 Sept 2025 - 02 Okt 2025",
-                ),
-              ],
+                      final totalRaw = map['total'];
+                      final terpinjamRaw = map['terpinjam'];
+
+                      final int total = _toInt(totalRaw);
+                      final int terpinjam = _toInt(terpinjamRaw);
+                      final int tersedia = total - terpinjam;
+
+                      final imageName = (map['image'] as String?) ?? '';
+                      final imagePath = imageName.isNotEmpty
+                          ? 'assets/images/$imageName'
+                          : '';
+
+                      return _buildItemCard(
+                        imagePath: imagePath,
+                        name: map['nama'] ?? '-',
+                        kode: map['kode'] ?? '-',
+                        tersedia: tersedia,
+                        terpinjam: terpinjam,
+                        rawData: map,
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -93,70 +128,80 @@ class CekKetersediaanScreen extends StatelessWidget {
     );
   }
 
-  // ================== CARD COMPONENT ==================
-  Widget _buildKetersediaanCard({
-    required Color avatarColor,
+  // ================== CARD DESIGN ==================
+  Widget _buildItemCard({
+    required String imagePath,
+    required String name,
     required String kode,
-    required String tanggal,
-    bool withText = true,
+    required int tersedia,
+    required int terpinjam,
+    Map<String, dynamic>? rawData,
   }) {
     return Container(
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
-      child: Row(
-        children: [
-          // Avatar
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: avatarColor,
-            child: const Icon(Icons.person, color: Colors.white, size: 32),
-          ),
-
-          const SizedBox(width: 16),
-
-          // Keterangan
-          Expanded(
-            child: withText
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        kode,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: 60,
+              child: imagePath.isNotEmpty
+                  ? Image.asset(
+                      imagePath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.broken_image,
+                        size: 40,
+                        color: Colors.black26,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        tanggal,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54),
-                      )
-                    ],
-                  )
-                : const SizedBox(),
-          ),
-
-          // Lihat Detail
-          if (withText)
-            const Text(
-              "Lihat Detail",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+                    )
+                  : const Icon(
+                      Icons.image_not_supported,
+                      size: 40,
+                      color: Colors.black26,
+                    ),
             ),
-        ],
+            const SizedBox(height: 10),
+            Text(
+              name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            Text(
+              "Kode : $kode",
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "tersedia : $tersedia\nTerpinjam : $terpinjam",
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+            // optional: show raw debug info when stock is zero to help debugging
+            if ((tersedia <= 0) && rawData != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  rawData.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 10, color: Colors.black38),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
