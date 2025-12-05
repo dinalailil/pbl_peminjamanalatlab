@@ -97,21 +97,21 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     FilterChip(
-                      label: const Text("Tersedia"),
-                      selected: selectedFilter == "Tersedia",
+                      label: const Text("tersedia"),
+                      selected: selectedFilter == "tersedia",
                       onSelected: (_) {
                         setState(() {
-                          selectedFilter = "Tersedia";
+                          selectedFilter = "tersedia";
                         });
                       },
                     ),
                     const SizedBox(width: 10),
                     FilterChip(
-                      label: const Text("Dipinjam"),
-                      selected: selectedFilter == "Dipinjam",
+                      label: const Text("dipinjam"),
+                      selected: selectedFilter == "dipinjam",
                       onSelected: (_) {
                         setState(() {
-                          selectedFilter = "Dipinjam";
+                          selectedFilter = "dipinjam";
                         });
                       },
                     ),
