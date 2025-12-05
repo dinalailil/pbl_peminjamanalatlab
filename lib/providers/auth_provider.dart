@@ -82,7 +82,7 @@ class AuthProvider with ChangeNotifier {
 
     if (error == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Registrasi Berhasil! Silakan Login."), backgroundColor: Colors.green),
+        const SnackBar(content: Text("Registrasi Berhasil! Silakan Login."), backgroundColor: Color.fromARGB(255, 175, 76, 160)),
       );
       toggleLogin(); // Balik ke halaman login setelah sukses register
     } else {
@@ -108,7 +108,7 @@ class AuthProvider with ChangeNotifier {
            Navigator.pushReplacementNamed(context, '/user-dashboard');
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Login Berhasil!"), backgroundColor: Colors.green),
+          const SnackBar(content: Text("Login Berhasil!"), backgroundColor: Color.fromARGB(255, 210, 128, 231)),
         );
       } else {
         throw Exception("Data user tidak ditemukan di Database!");
