@@ -97,20 +97,27 @@ class CekKetersediaanScreen extends StatelessWidget {
                       // Debug print to inspect document fields at runtime
                       debugPrint('alat doc ${item.id}: $map');
 
-                      final totalRaw = map['total'];
-                      final terpinjamRaw = map['terpinjam'];
+                      // Field names sesuai Firestore: jumlah (total stock), status, gambar URL
+                      final int jumlah = _toInt(map['jumlah']);
+                      final String status =
+                          (map['status'] as String?) ?? 'Unknown';
+                      final String gambarUrl = (map['gambar'] as String?) ?? '';
 
-                      final int total = _toInt(totalRaw);
-                      final int terpinjam = _toInt(terpinjamRaw);
-                      final int tersedia = total - terpinjam;
-
-                      final imageName = (map['image'] as String?) ?? '';
-                      final imagePath = imageName.isNotEmpty
-                          ? 'assets/images/$imageName'
-                          : '';
+                      // Compute tersedia dan terpinjam dari status dan jumlah
+                      int tersedia = 0;
+                      int terpinjam = 0;
+                      if (status.toLowerCase().contains('tersedia')) {
+                        tersedia = jumlah;
+                        terpinjam = 0;
+                      } else if (status.toLowerCase().contains('terpinjam')) {
+                        tersedia = 0;
+                        terpinjam = jumlah;
+                      } else {
+                        tersedia = jumlah;
+                      }
 
                       return _buildItemCard(
-                        imagePath: imagePath,
+                        imagePath: gambarUrl,
                         name: map['nama'] ?? '-',
                         kode: map['kode'] ?? '-',
                         tersedia: tersedia,
@@ -157,15 +164,27 @@ class CekKetersediaanScreen extends StatelessWidget {
             SizedBox(
               height: 60,
               child: imagePath.isNotEmpty
-                  ? Image.asset(
-                      imagePath,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.broken_image,
-                        size: 40,
-                        color: Colors.black26,
-                      ),
-                    )
+                  ? (imagePath.startsWith('http')
+                        ? Image.network(
+                            imagePath,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                                  Icons.broken_image,
+                                  size: 40,
+                                  color: Colors.black26,
+                                ),
+                          )
+                        : Image.asset(
+                            imagePath,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                                  Icons.broken_image,
+                                  size: 40,
+                                  color: Colors.black26,
+                                ),
+                          ))
                   : const Icon(
                       Icons.image_not_supported,
                       size: 40,
