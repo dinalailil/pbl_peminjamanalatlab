@@ -12,8 +12,11 @@ class FormPeminjamanScreen extends StatefulWidget {
 
 class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   final _formKey = GlobalKey<FormState>();
-  TextEditingController idController = TextEditingController();
+
   TextEditingController namaController = TextEditingController();
+  TextEditingController keperluanController = TextEditingController();
+
+  int jumlahPinjam = 1;
   DateTime? tglPinjam;
   DateTime? tglKembali;
   bool loading = false;
@@ -22,14 +25,17 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2023),
+      firstDate: DateTime(2024),
       lastDate: DateTime(2030),
     );
 
     if (picked != null) {
       setState(() {
-        if (isPinjam) tglPinjam = picked;
-        else tglKembali = picked;
+        if (isPinjam) {
+          tglPinjam = picked;
+        } else {
+          tglKembali = picked;
+        }
       });
     }
   }
@@ -39,34 +45,36 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
 
     if (tglPinjam == null || tglKembali == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lengkapi tanggal pinjam & kembali"))
+        const SnackBar(content: Text("Lengkapi tanggal pinjam & kembali")),
       );
       return;
     }
 
     setState(() => loading = true);
 
-    final itemRef =
+    final alatRef =
         FirebaseFirestore.instance.collection('alat').doc(widget.data.id);
 
-    final peminjamanRef =
-        FirebaseFirestore.instance.collection("peminjaman");
+    final pinjamRef = FirebaseFirestore.instance.collection("peminjaman");
 
     try {
       await FirebaseFirestore.instance.runTransaction((tx) async {
-        final snap = await tx.get(itemRef);
-        int current = (snap['jumlah'] ?? 0) as int;
+        final snap = await tx.get(alatRef);
+        int stok = (snap['jumlah'] ?? 0) as int;
 
-        if (current <= 0) throw Exception("Stok habis!");
+        if (stok < jumlahPinjam) {
+          throw Exception("Stok tidak mencukupi!");
+        }
 
-        tx.update(itemRef, {
-          "jumlah": current - 1,
-          "status": current - 1 == 0 ? "dipinjam" : "tersedia",
+        tx.update(alatRef, {
+          "jumlah": stok - jumlahPinjam,
+          "status": (stok - jumlahPinjam) == 0 ? "dipinjam" : "tersedia"
         });
 
-        tx.set(peminjamanRef.doc(), {
-          "id_peminjam": idController.text,
+        tx.set(pinjamRef.doc(), {
           "nama_peminjam": namaController.text,
+          "jumlah_pinjam": jumlahPinjam,
+          "keperluan": keperluanController.text,
           "kode_barang": widget.data['kode'],
           "nama_barang": widget.data['nama'],
           "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
@@ -78,14 +86,13 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Peminjaman diajukan!"))
+          const SnackBar(content: Text("Peminjaman diajukan!")),
         );
-
         Navigator.pop(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal: $e"))
+        SnackBar(content: Text("Gagal: $e")),
       );
     }
 
@@ -95,42 +102,96 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   @override
   Widget build(BuildContext context) {
     final map = widget.data.data() as Map<String, dynamic>;
+    final warnaUngu = const Color(0xFF7A56FF);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Formulir Peminjaman (${map['kode']})"),
+        backgroundColor: warnaUngu,
+        title: Text("Peminjaman (${map['kode']})",
+            style: const TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              Text("Nama Barang: ${map['nama']}",
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 15),
-
-              TextFormField(
-                controller: idController,
-                decoration: const InputDecoration(
-                  labelText: "ID Peminjam",
-                ),
-                validator: (v) => v!.isEmpty ? "Isi ID peminjam" : null,
+              Text(
+                map['nama'],
+                style: const TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.bold),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 25),
 
-              TextFormField(
+              // =============================
+              // NAMA PEMINJAM
+              // =============================
+              TextField(
                 controller: namaController,
                 decoration: const InputDecoration(
                   labelText: "Nama Peminjam",
+                  border: UnderlineInputBorder(),
                 ),
-                validator: (v) => v!.isEmpty ? "Isi nama peminjam" : null,
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
 
+              // =============================
+              // JUMLAH PINJAM (+ / -)
+              // =============================
+              const Text(
+  "Jumlah Pinjam",
+  style: TextStyle(fontWeight: FontWeight.bold),
+),
+const SizedBox(height: 10),
+
+Container(
+  padding: const EdgeInsets.symmetric(horizontal: 15),
+  decoration: BoxDecoration(
+    border: Border(
+      bottom: BorderSide(color: Colors.grey.shade400, width: 1),
+    ),
+  ),
+  child: Row(
+    children: [
+      // Tombol minus
+      IconButton(
+        onPressed: jumlahPinjam > 1
+            ? () => setState(() => jumlahPinjam--)
+            : null,
+        icon: const Icon(Icons.remove_circle_outline),
+      ),
+
+      // Nilai jumlah pinjam
+      Expanded(
+        child: Text(
+          jumlahPinjam.toString(),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+
+      // Tombol plus
+      IconButton(
+        onPressed: () => setState(() => jumlahPinjam++),
+        icon: const Icon(Icons.add_circle_outline),
+      ),
+    ],
+  ),
+),
+
+const SizedBox(height: 25),
+
+              
+              // =============================
+              // TANGGAL PINJAM
+              // =============================
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
@@ -142,6 +203,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                 onTap: () => pickDate(context, true),
               ),
 
+              // =============================
+              // TANGGAL KEMBALI
+              // =============================
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
@@ -153,7 +217,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                 onTap: () => pickDate(context, false),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 35),
 
               Row(
                 children: [
@@ -167,6 +231,10 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: loading ? null : submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: warnaUngu,
+                        foregroundColor: Colors.white,
+                      ),
                       child: Text(loading ? "Mengirim..." : "Kirim"),
                     ),
                   ),

@@ -1,10 +1,11 @@
-// catalog_screen.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'detail_barang_modal.dart';
 
 class CatalogScreen extends StatefulWidget {
-  const CatalogScreen({Key? key}) : super(key: key);
+  final String? labName; // ★ menerima nama lab
+
+  const CatalogScreen({Key? key, this.labName}) : super(key: key);
 
   @override
   State<CatalogScreen> createState() => _CatalogScreenState();
@@ -14,16 +15,22 @@ class _CatalogScreenState extends State<CatalogScreen> {
   String selectedFilter = "Semua";
   String searchQuery = "";
 
-  Stream<QuerySnapshot> getFilteredStream() {
-    if (selectedFilter == "Semua") {
-      return FirebaseFirestore.instance.collection('alat').snapshots();
-    }
+  // ★ STREAM berdasarkan lab + filter
+ Stream<QuerySnapshot> getFilteredStream() {
+  Query alatRef = FirebaseFirestore.instance.collection('alat');
 
-    return FirebaseFirestore.instance
-        .collection('alat')
-        .where('status', isEqualTo: selectedFilter)
-        .snapshots();
+  if (widget.labName != null) {
+   alatRef = alatRef.where('lab', arrayContains: widget.labName);
+
   }
+
+  if (selectedFilter != "Semua") {
+    alatRef = alatRef.where('status', isEqualTo: selectedFilter);
+  }
+
+  return alatRef.snapshots();
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,28 +55,33 @@ class _CatalogScreenState extends State<CatalogScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title + right back icon
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Katalog Barang",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    )
-                  ],
-                ),
+                // Title + Back Button
+               Row(
+  children: [
+    Expanded(
+      child: Text(
+        widget.labName != null
+            ? "Katalog - ${widget.labName}"
+            : "Katalog Barang",
+        style: const TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+    IconButton(
+      icon: const Icon(Icons.arrow_back, color: Colors.white),
+      onPressed: () => Navigator.pop(context),
+    )
+  ],
+),
 
                 const SizedBox(height: 15),
 
-                // search
+                // Search Bar
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 3),
                   decoration: BoxDecoration(
@@ -92,7 +104,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                 const SizedBox(height: 15),
 
-                // filter chips
+                // Filter Chips
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -133,7 +145,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
           const SizedBox(height: 15),
 
-          // list
+          // LIST GRID VIEW
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: getFilteredStream(),
@@ -144,6 +156,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                 var data = snapshot.data!.docs;
 
+                // Search filter
                 if (searchQuery.isNotEmpty) {
                   data = data
                       .where((item) =>
@@ -156,7 +169,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                 if (data.isEmpty) {
                   return const Center(
-                    child: Text("Tidak ada barang", style: TextStyle(fontSize: 16)),
+                    child:
+                        Text("Tidak ada barang", style: TextStyle(fontSize: 16)),
                   );
                 }
 
@@ -176,12 +190,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     String nama = map['nama'] ?? "-";
                     String kode = map['kode'] ?? "-";
                     String status = map['status'] ?? "-";
-                    int jumlah = (map['jumlah'] is num) ? (map['jumlah'] as num).toInt() : 0;
+                    int jumlah = (map['jumlah'] is num)
+                        ? (map['jumlah'] as num).toInt()
+                        : 0;
                     String? gambar = map['gambar'];
 
                     return InkWell(
                       onTap: () {
-                        // Tampilkan modal detail (floating card)
                         showDialog(
                           context: context,
                           builder: (_) => DetailBarangModal(data: item),
@@ -205,30 +220,40 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             Expanded(
                               child: gambar != null
                                   ? Image.network(gambar, fit: BoxFit.contain)
-                                  : const Icon(Icons.image, size: 70, color: Colors.grey),
+                                  : const Icon(Icons.image,
+                                      size: 70, color: Colors.grey),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               nama,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14),
                             ),
-                            Text("Kode: $kode", style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                            Text("Kode: $kode",
+                                style: TextStyle(
+                                    color: Colors.grey.shade600, fontSize: 12)),
                             const SizedBox(height: 6),
-                            Text("Stok: $jumlah", style: TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w500)),
+                            Text("Stok: $jumlah",
+                                style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500)),
                             const SizedBox(height: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: status.toString().toLowerCase() == "tersedia"
-                                    ? Colors.green.shade100
-                                    : Colors.red.shade100,
+                                color:
+                                    status.toLowerCase() == "tersedia"
+                                        ? Colors.green.shade100
+                                        : Colors.red.shade100,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 status,
                                 style: TextStyle(
-                                  color: status.toString().toLowerCase() == "tersedia"
+                                  color: status.toLowerCase() == "tersedia"
                                       ? Colors.green.shade700
                                       : Colors.red.shade700,
                                   fontSize: 11,
