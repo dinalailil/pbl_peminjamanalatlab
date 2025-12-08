@@ -8,9 +8,10 @@ import 'screens/auth/login_screen.dart'; // Hanya Login Screen
 import 'screens/user/user_home_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
 import 'screens/auth/splash_screen.dart';
-
+import 'package:intl/date_symbol_data_local.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
   await Firebase.initializeApp();
   runApp(const MyApp());
 }
