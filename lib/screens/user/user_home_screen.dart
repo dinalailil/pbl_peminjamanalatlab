@@ -360,8 +360,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
 
- // ===========================================================================
-  // TAB 3: PROFIL (Perbaikan Kurung Kurawal)
+// ===========================================================================
+  // TAB 3: PROFIL (HEADER FULL BLOCK + JUDUL TENGAH)
   // ===========================================================================
   Widget _buildProfileTab() {
      return SingleChildScrollView(
@@ -372,45 +372,39 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               height: 240, 
               child: Stack(
                 clipBehavior: Clip.none,
-                alignment: Alignment.center,
+                alignment: Alignment.center, // KUNCI: Align Center agar judul di tengah
                 children: [
-                  // Background Gradient
-                  Container(
-                    height: 180, 
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [primaryColorStart, primaryColorEnd],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  // 1. Background Gradient Full Block (dengan border radius bawah)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 180, // Tinggi area ungu
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [primaryColorStart, primaryColorEnd],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
                       ),
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(30),
-                        bottomRight: Radius.circular(30),
-                      ),
-                    ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      // Child SafeArea untuk Judul
+                      child: const SafeArea(
                         child: Column(
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.grain, color: Colors.white, size: 28),
-                                    const SizedBox(width: 10),
-                                    const Text("Labify", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    IconButton(onPressed: () {}, icon: const Icon(Icons.mail_outline, color: Colors.white)),
-                                    IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none, color: Colors.white)),
-                                  ],
-                                )
-                              ],
+                            SizedBox(height: 20), // Jarak dari atas (status bar)
+                            Text(
+                              "Profil Saya",
+                              style: TextStyle(
+                                color: Colors.white, 
+                                fontSize: 24, 
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1
+                              ),
                             ),
                           ],
                         ),
@@ -418,7 +412,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     ),
                   ),
 
-                  // Avatar User Overlap
+                  // 2. Avatar User Overlap
                   Positioned(
                     bottom: 0, 
                     child: StreamBuilder<DocumentSnapshot>(
@@ -453,7 +447,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
             const SizedBox(height: 10),
 
-            // Nama & Email
+            // Nama & Email (Tetap sama)
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
               builder: (context, snapshot) {
@@ -474,21 +468,21 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
             const SizedBox(height: 30),
 
-            // Menu Profil & Tombol Keluar
+            // Menu Profil (Tetap sama)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 children: [
                   _buildProfileMenuItem(icon: Icons.edit, text: "Ubah Profil", onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()))),
-                 _buildProfileMenuItem(
+                  _buildProfileMenuItem(
   icon: Icons.history, 
   text: "Riwayat Transaksi", 
   onTap: () {
      Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
   }
 ),
-                 _buildProfileMenuItem(
-                icon: Icons.help_outline, 
+                  _buildProfileMenuItem(
+  icon: Icons.help_outline, 
   text: "Bantuan", 
   onTap: () {
      Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpScreen()));
@@ -530,12 +524,144 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
   
 
+ // FUNGSI DIALOG LOGOUT CUSTOM (Avatar + Rounded Button)
   void _showLogoutDialog(BuildContext context) {
-    showDialog(context: context, barrierDismissible: false, builder: (context) => Dialog(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), child: Container(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-       const Text("Konfirmasi Logout", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-       const SizedBox(height: 20),
-       Row(children: [Expanded(child: ElevatedButton(onPressed: () async { await AuthService().logout(); if(context.mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text("Ya", style: TextStyle(color: Colors.white)))), const SizedBox(width: 10), Expanded(child: ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text("Tidak")))])
-    ]))));
+    final user = FirebaseAuth.instance.currentUser;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User gak bisa tutup paksa dengan klik luar
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 10,
+          backgroundColor: Colors.grey[100], 
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // Tinggi dialog sesuai isi
+              children: [
+                // 1. AVATAR USER (Ambil dari Firestore & Decode Base64)
+                FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance.collection('users').doc(user?.uid).get(),
+                  builder: (context, snapshot) {
+                    String? photoBase64;
+                    
+                    // Ambil data photo_base64
+                    if (snapshot.hasData && snapshot.data!.exists) {
+                      var data = snapshot.data!.data() as Map<String, dynamic>;
+                      if (data.containsKey('photo_base64')) {
+                        photoBase64 = data['photo_base64'];
+                      }
+                    }
+
+                    return Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)
+                        ],
+                        // LOGIKA GAMBAR BASE64:
+                        image: (photoBase64 != null && photoBase64.isNotEmpty)
+                            ? DecorationImage(
+                                image: MemoryImage(base64Decode(photoBase64)), // Decode di sini
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      // Jika tidak ada foto, tampilkan icon default Merah-Pink
+                      child: (photoBase64 == null || photoBase64.isEmpty)
+                          ? const Icon(Icons.person, size: 50, color: Color(0xFFEF4444)) 
+                          : null,
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 20),
+
+                // 2. TEKS PERTANYAAN
+                const Text(
+                  "Apakah anda yakin\nkeluar dari aplikasi?",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                    height: 1.2,
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // 3. TOMBOL YA / TIDAK
+                Row(
+                  children: [
+                    // TOMBOL YA (LOGOUT)
+                    Expanded(
+                      child: SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            Navigator.pop(dialogContext); // Tutup dialog konfirmasi
+                            
+                            // Tampilkan Loading sebentar
+                            showDialog(
+                              context: context, 
+                              barrierDismissible: false, 
+                              builder: (c) => const Center(child: CircularProgressIndicator())
+                            );
+                            
+                            await Future.delayed(const Duration(milliseconds: 500)); // Efek visual
+                            await AuthService().logout(); // Logout Firebase
+                            
+                            if (context.mounted) {
+                              Navigator.pop(context); // Tutup loading
+                              // Pindah ke Login Screen
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                (Route<dynamic> route) => false,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8E78FF), // Warna Ungu Tema
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                            elevation: 0,
+                          ),
+                          child: const Text("Ya", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 15),
+
+                    // TOMBOL TIDAK (BATAL)
+                    Expanded(
+                      child: SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8E78FF), // Warna Ungu Tema (Sama)
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                            elevation: 0,
+                          ),
+                          child: const Text("Tidak", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
 // ===========================================================================

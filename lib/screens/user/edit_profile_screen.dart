@@ -14,14 +14,21 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _namaController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passController = TextEditingController(); // Input Password Baru
+  final _emailController = TextEditingController(); // Controller Email (Read only)
+  final _passController = TextEditingController();
   
   final User? user = FirebaseAuth.instance.currentUser;
   bool _isLoading = false;
 
+  // --- STATE BARU: UNTUK MATA PASSWORD ---
+  bool _isPasswordVisible = false; 
+
   File? _imageFile;        
   String? _oldPhotoBase64; 
+
+  // Warna Tema
+  final Color primaryColorStart = const Color(0xFF8E78FF);
+  final Color primaryColorEnd = const Color(0xFF764BA2);
 
   @override
   void initState() {
@@ -35,7 +42,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (doc.exists) {
         setState(() {
           _namaController.text = doc['nama'] ?? '';
-          _emailController.text = user!.email ?? '';
+          _emailController.text = user!.email ?? ''; // Load email
           if (doc.data()!.containsKey('photo_base64')) {
             _oldPhotoBase64 = doc['photo_base64'];
           }
@@ -59,32 +66,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // --- FUNGSI SIMPAN (GABUNGAN UPDATE PROFIL & PASSWORD) ---
   Future<void> _saveAllChanges() async {
     setState(() => _isLoading = true);
 
     try {
-      // 1. CEK APAKAH USER INGIN GANTI PASSWORD?
+      // 1. Update Password (Jika diisi)
       if (_passController.text.isNotEmpty) {
         if (_passController.text.length < 6) {
           throw Exception("Password baru minimal 6 karakter.");
         }
-        // Update Password ke Firebase Auth
         await user?.updatePassword(_passController.text);
       }
 
-      // 2. PROSES FOTO (BASE64)
+      // 2. Proses Foto (Base64)
       String? base64ToSave = _oldPhotoBase64; 
       if (_imageFile != null) {
         final bytes = await _imageFile!.readAsBytes();
         base64ToSave = base64Encode(bytes);
-        
         if (base64ToSave.length > 900000) {
              throw Exception("Ukuran foto terlalu besar. Pilih yang lebih kecil.");
         }
       }
 
-      // 3. UPDATE DATA FIRESTORE (Nama & Foto)
+      // 3. Update Firestore
       await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
         'nama': _namaController.text,
         'photo_base64': base64ToSave,
@@ -92,21 +96,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       if (!mounted) return;
       
-      // Jika sukses semua
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Profil & Data berhasil diperbarui!"), backgroundColor: Colors.green)
+        const SnackBar(content: Text("Profil berhasil diperbarui!"), backgroundColor: Color.fromARGB(255, 240, 136, 238))
       );
       Navigator.pop(context);
 
     } catch (e) {
-      // Handle Error (Terutama jika User perlu Login Ulang untuk ganti password)
       String errorMessage = e.toString();
       if (errorMessage.contains("requires-recent-login")) {
-        errorMessage = "Gagal Ganti Password: Mohon Logout dan Login ulang terlebih dahulu (Keamanan Google).";
+        errorMessage = "Gagal: Mohon Logout dan Login ulang dulu untuk ganti password.";
       } else if (errorMessage.contains("Exception:")) {
         errorMessage = errorMessage.replaceAll("Exception: ", "");
       }
-
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage), backgroundColor: Colors.red, duration: const Duration(seconds: 4))
       );
@@ -118,86 +120,178 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black), onPressed: () => Navigator.pop(context)),
-        title: const Text("Edit Profil", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
+      backgroundColor: const Color(0xFFF8F9FA), 
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // --- AVATAR ---
-            Center(
+            // --- HEADER STACK ---
+            SizedBox(
+              height: 260, 
               child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
                 children: [
+                  // Background Gradient
                   Container(
-                    width: 120,
-                    height: 120,
+                    height: 200,
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
-                      image: _imageFile != null
-                          ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
-                          : (_oldPhotoBase64 != null 
-                              ? DecorationImage(image: MemoryImage(base64Decode(_oldPhotoBase64!)), fit: BoxFit.cover)
-                              : null) 
+                      gradient: LinearGradient(
+                        colors: [primaryColorStart, primaryColorEnd],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(30),
+                        bottomRight: Radius.circular(30),
+                      ),
                     ),
-                    child: (_imageFile == null && _oldPhotoBase64 == null)
-                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                        : null,
                   ),
+
+                  // Tombol Back & Judul
+                  Positioned(
+                    top: 50,
+                    left: 10,
+                    right: 10,
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                        ),
+                        const Expanded(
+                          child: Text(
+                            "Edit Profil",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          ),
+                        ),
+                        const SizedBox(width: 48), 
+                      ],
+                    ),
+                  ),
+
+                  // Avatar Overlap
                   Positioned(
                     bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: _pickImage,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(color: Colors.amber, shape: BoxShape.circle),
-                        child: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
-                      ),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
+                            image: _imageFile != null
+                              ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
+                              : (_oldPhotoBase64 != null 
+                                  ? DecorationImage(image: MemoryImage(base64Decode(_oldPhotoBase64!)), fit: BoxFit.cover)
+                                  : null)
+                          ),
+                          child: (_imageFile == null && _oldPhotoBase64 == null)
+                              ? const Icon(Icons.person, size: 60, color: Colors.grey)
+                              : null,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+                              child: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 30),
 
-            // --- INPUT NAMA ---
-            _buildLabel("Ubah Nama Profile"),
-            TextField(controller: _namaController, decoration: _inputDecoration("Masukkan nama")),
-            const SizedBox(height: 20),
-            
+            // --- FORM SECTION ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel("Nama Lengkap"),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: TextField(
+                      controller: _namaController,
+                      decoration: _inputDecoration("Masukkan nama anda", Icons.person_outline),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 20),
 
-            // --- INPUT PASSWORD (BARU DI SINI) ---
-            _buildLabel("Ubah Password"),
-            TextField(
-              controller: _passController,
-              obscureText: true, // Sembunyikan text
-              decoration: _inputDecoration("Isi jika ingin ganti password"),
-            ),
+                  // --- FIELD PASSWORD DENGAN MATA ---
+                  _buildLabel("Ubah Password "),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: TextField(
+                      controller: _passController,
+                      obscureText: !_isPasswordVisible, // Dinamis: Sembunyi/Muncul
+                      decoration: _inputDecoration(
+                        "Isi untuk ganti password", 
+                        Icons.lock_outline,
+                        // Ikon Mata di Kanan
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isMenuOpen() ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible; // Toggle status
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
 
-            const SizedBox(height: 40),
-            
-            // --- TOMBOL SIMPAN ---
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveAllChanges, // Panggil fungsi gabungan
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8E78FF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                child: _isLoading 
-                  ? const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-                      SizedBox(width: 10),
-                      Text("Menyimpan...", style: TextStyle(color: Colors.white))
-                    ])
-                  : const Text("Simpan Perubahan", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 40),
+
+                  // TOMBOL SIMPAN
+                  Container(
+                    width: double.infinity,
+                    height: 55,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [primaryColorStart, primaryColorEnd]),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [BoxShadow(color: primaryColorStart.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5))],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _saveAllChanges,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                      child: _isLoading 
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Simpan Perubahan", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 30),
+                ],
               ),
             ),
           ],
@@ -206,18 +300,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  // Helper untuk cek kondisi icon mata (agar kodingan di atas rapi)
+  bool _isMenuOpen() => _isPasswordVisible;
+
   Widget _buildLabel(String text) {
-    return Align(alignment: Alignment.centerLeft, child: Padding(padding: const EdgeInsets.only(bottom: 8.0), child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0, left: 5),
+      child: Text(
+        text, 
+        style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black54, fontSize: 14)
+      ),
+    );
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  // Modified Helper: Bisa menerima suffixIcon (tombol mata)
+  InputDecoration _inputDecoration(String hint, IconData icon, {Widget? suffixIcon}) {
     return InputDecoration(
-      hintText: hint, 
+      hintText: hint,
+      prefixIcon: Icon(icon, color: primaryColorStart.withOpacity(0.7)),
+      suffixIcon: suffixIcon, // Tambahan untuk tombol mata
       hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-      filled: true, 
-      fillColor: Colors.grey[200], 
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), 
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)
+      filled: true,
+      fillColor: Colors.transparent, // Transparan karena container luarnya sudah putih
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 }

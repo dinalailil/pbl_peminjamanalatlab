@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         // --- LOGO SAJA (Tanpa Teks) ---
                         Image.asset(
-                          'images/peminjamanlab.png', 
+                          'images/logotim.png', 
                           width: 180, // Ukuran pas (tidak terlalu besar/kecil)
                           height: 180,
                         ),
@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         // --- KARTU FORM ---
                         Container(
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(30),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(24),
@@ -105,9 +105,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Judul Kecil di dalam Card
+                                // Judul Kecil
                                 Text(
-                                  authProvider.isLogin ? "Silakan Masuk" : "Buat Akun Baru",
+                                  authProvider.isLogin ? "Login" : "Register",
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 const SizedBox(height: 20),
 
-                                // Field Nama (Hanya saat Register)
+                                // Field Nama (Register Only)
                                 if (!authProvider.isLogin) ...[
                                   TextfieldNamaWidget(controller: authProvider.namaCtrl),
                                   const SizedBox(height: 16),
@@ -126,24 +126,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 TextfieldEmailWidget(controller: authProvider.emailCtrl),
                                 const SizedBox(height: 16),
 
-                                // Field Password
+                                
                                 TextfieldPasswordWidget(controller: authProvider.passCtrl),
                                 
-                                const SizedBox(height: 10),
                                 
-                                // Lupa Password
-                                if (authProvider.isLogin)
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Text(
-                                      "Lupa Password?",
-                                      style: TextStyle(
-                                        color: const Color(0xFF8E78FF),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13
-                                      ),
-                                    ),
-                                  ),
 
                                 const SizedBox(height: 30),
 
@@ -155,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         height: 50,
                                         decoration: BoxDecoration(
                                           gradient: const LinearGradient(
-                                            colors: [Color(0xFF8E78FF), Color(0xFFDD2476)],
+                                            colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
                                           ),
                                           borderRadius: BorderRadius.circular(12),
                                           boxShadow: [
