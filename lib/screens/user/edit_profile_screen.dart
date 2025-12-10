@@ -117,61 +117,78 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), 
+      backgroundColor: const Color(0xFFF5F5F5),
+      // appbar: null, // Hapus AppBar agar header kita bisa full ke atas
+      
       body: SingleChildScrollView(
+        // Hapus padding di sini agar header menempel ke tepi layar
         child: Column(
           children: [
-            // --- HEADER STACK ---
+            // --- HEADER STACK FULL SCREEN ---
             SizedBox(
               height: 260, 
               child: Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.center,
                 children: [
-                  // Background Gradient
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [primaryColorStart, primaryColorEnd],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(30),
-                        bottomRight: Radius.circular(30),
-                      ),
-                    ),
-                  ),
-
-                  // Tombol Back & Judul
+                  // 1. Background Gradient (Full ke Atas)
                   Positioned(
-                    top: 50,
-                    left: 10,
-                    right: 10,
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                    top: 0, // Tempel ke atas
+                    left: 0,
+                    right: 0,
+                    height: 200, // Tinggi area ungu
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [primaryColorStart, primaryColorEnd],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        const Expanded(
-                          child: Text(
-                            "Edit Profil",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                          ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
                         ),
-                        const SizedBox(width: 48), 
-                      ],
+                      ),
                     ),
                   ),
 
-                  // Avatar Overlap
+                  // 2. Tombol Back & Judul (Pakai SafeArea hanya untuk konten ini)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                            ),
+                            const Expanded(
+                              child: Text(
+                                "Edit Profil",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white, 
+                                  fontSize: 22, 
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 48), // Penyeimbang
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 3. Avatar Overlap
                   Positioned(
                     bottom: 0,
                     child: Stack(
@@ -180,20 +197,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           width: 120,
                           height: 120,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Colors.grey[200],
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 4),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1), 
+                                blurRadius: 15, 
+                                offset: const Offset(0, 5)
+                              )
+                            ],
                             image: _imageFile != null
-                              ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
-                              : (_oldPhotoBase64 != null 
-                                  ? DecorationImage(image: MemoryImage(base64Decode(_oldPhotoBase64!)), fit: BoxFit.cover)
-                                  : null)
+                                ? DecorationImage(image: FileImage(_imageFile!), fit: BoxFit.cover)
+                                : (_oldPhotoBase64 != null 
+                                    ? DecorationImage(image: MemoryImage(base64Decode(_oldPhotoBase64!)), fit: BoxFit.cover)
+                                    : null) 
                           ),
                           child: (_imageFile == null && _oldPhotoBase64 == null)
                               ? const Icon(Icons.person, size: 60, color: Colors.grey)
                               : null,
                         ),
+                        
+                        // Tombol Kamera
                         Positioned(
                           bottom: 0,
                           right: 0,
@@ -201,7 +226,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             onTap: _pickImage,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+                              decoration: const BoxDecoration(
+                                color: Colors.amber, 
+                                shape: BoxShape.circle
+                              ),
                               child: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
                             ),
                           ),

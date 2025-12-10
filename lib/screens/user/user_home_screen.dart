@@ -6,7 +6,9 @@ import 'package:intl/intl.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 import '../../services/auth_service.dart';
-
+import 'history_screen.dart';
+import 'help_screen.dart';
+import 'notification_screen.dart';
 import 'edit_profile_screen.dart';
 import 'catalog_screen.dart';
 import 'pengembalian_screen.dart';
@@ -138,7 +140,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       ),
                       const SizedBox(height: 5),
                       const Text(
-                        "Selamat Datang di Labify\nMau pinjam apa hari ini?",
+                        "Selamat Datang di Labify",
                         style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                       const SizedBox(height: 10),
@@ -392,187 +394,157 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // ====================================================================
-  // TAB PROFIL
-  // ====================================================================
+  // ===========================================================================
+  // TAB 3: PROFIL (HEADER FULL BLOCK + JUDUL TENGAH)
+  // ===========================================================================
   Widget _buildProfileTab() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // HEADER PROFIL
-          SizedBox(
-            height: 240,
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: [
-                // GRADIENT HEADER
-                Container(
-                  height: 180,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [primaryColorStart, primaryColorEnd],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text(
-                            "Profil",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Icon(Icons.settings, color: Colors.white),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // AVATAR USER
-                Positioned(
-                  bottom: -30,
-                  child: StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user?.uid)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      String? photo;
-
-                      if (snapshot.hasData && snapshot.data!.exists) {
-                        var data = snapshot.data!.data() as Map<String, dynamic>;
-                        photo = data['photo_base64'];
-                      }
-
-                      return Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                          image: (photo != null && photo.isNotEmpty)
-                              ? DecorationImage(
-                                  image: MemoryImage(base64Decode(photo)),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: (photo == null || photo.isEmpty)
-                            ? Icon(Icons.person, size: 60, color: Colors.grey[400])
-                            : null,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 50),
-
-          // NAMA & EMAIL
-          StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('users')
-                .doc(user?.uid)
-                .snapshots(),
-            builder: (context, snapshot) {
-              String nama = "Loading...";
-              String email = user?.email ?? "-";
-
-              if (snapshot.hasData && snapshot.data!.exists) {
-                var data = snapshot.data!.data() as Map<String, dynamic>;
-                nama = data['nama'] ?? "User";
-              }
-
-              return Column(
+     return SingleChildScrollView(
+        child: Column(
+          children: [
+            // HEADER STACK
+            SizedBox(
+              height: 240, 
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center, // KUNCI: Align Center agar judul di tengah
                 children: [
-                  Text(
-                    nama,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(email, style: const TextStyle(color: Colors.grey)),
-                ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 30),
-
-          // MENU PROFIL
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text("Ubah Profil"),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.history),
-                  title: const Text("Riwayat Transaksi"),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(Icons.help_outline),
-                  title: const Text("Bantuan"),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {},
-                ),
-
-                const SizedBox(height: 20),
-
-                // LOGOUT BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _showLogoutDialog(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[50],
-                      foregroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  // 1. Background Gradient Full Block (dengan border radius bawah)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 180, // Tinggi area ungu
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [primaryColorStart, primaryColorEnd],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                      ),
+                      // Child SafeArea untuk Judul
+                      child: const SafeArea(
+                        child: Column(
+                          children: [
+                            SizedBox(height: 20), // Jarak dari atas (status bar)
+                            Text(
+                              "Profil Saya",
+                              style: TextStyle(
+                                color: Colors.white, 
+                                fontSize: 24, 
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      "Keluar Aplikasi",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+
+                  // 2. Avatar User Overlap
+                  Positioned(
+                    bottom: 0, 
+                    child: StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+                      builder: (context, snapshot) {
+                        String? photoBase64;
+                        if (snapshot.hasData && snapshot.data!.exists) {
+                          var data = snapshot.data!.data() as Map<String, dynamic>;
+                          if (data.containsKey('photo_base64')) photoBase64 = data['photo_base64'];
+                        }
+                        return Container(
+                          width: 120, height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
+                            image: (photoBase64 != null && photoBase64.isNotEmpty)
+                                ? DecorationImage(image: MemoryImage(base64Decode(photoBase64)), fit: BoxFit.cover)
+                                : null,
+                          ),
+                          child: (photoBase64 == null || photoBase64.isEmpty)
+                              ? Icon(Icons.person, size: 60, color: Colors.grey[400])
+                              : null,
+                        );
+                      },
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 30),
-        ],
-      ),
+
+            const SizedBox(height: 10),
+
+            // Nama & Email (Tetap sama)
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+              builder: (context, snapshot) {
+                String nama = "Loading...";
+                String email = user?.email ?? "";
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  var data = snapshot.data!.data() as Map<String, dynamic>;
+                  nama = data['nama'] ?? "User";
+                }
+                return Column(
+                  children: [
+                    Text(nama, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    Text(email, style: const TextStyle(color: Colors.grey)),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 30),
+
+            // Menu Profil (Tetap sama)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                children: [
+                  _buildProfileMenuItem(icon: Icons.edit, text: "Ubah Profil", onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()))),
+                  _buildProfileMenuItem(
+  icon: Icons.history, 
+  text: "Riwayat Transaksi", 
+  onTap: () {
+     Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+  }
+),
+                  _buildProfileMenuItem(
+  icon: Icons.help_outline, 
+  text: "Bantuan", 
+  onTap: () {
+     Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpScreen()));
+  }
+),
+                  
+                  const SizedBox(height: 20),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _showLogoutDialog(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[50],
+                        foregroundColor: Colors.red,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                      ),
+                      child: const Text("Keluar Aplikasi", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
+              ),
+            ),
+          ],
+        ),
     );
   }
 
@@ -584,8 +556,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
     );
   }
+  
 
-  // FUNGSI DIALOG LOGOUT CUSTOM (Avatar + Rounded Button)
+ // FUNGSI DIALOG LOGOUT CUSTOM (Avatar + Rounded Button)
   void _showLogoutDialog(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -596,7 +569,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           elevation: 10,
-          backgroundColor: Colors.grey[100],
+          backgroundColor: Colors.grey[100], 
           child: Container(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -607,7 +580,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   future: FirebaseFirestore.instance.collection('users').doc(user?.uid).get(),
                   builder: (context, snapshot) {
                     String? photoBase64;
-
+                    
                     // Ambil data photo_base64
                     if (snapshot.hasData && snapshot.data!.exists) {
                       var data = snapshot.data!.data() as Map<String, dynamic>;
@@ -636,12 +609,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       ),
                       // Jika tidak ada foto, tampilkan icon default Merah-Pink
                       child: (photoBase64 == null || photoBase64.isEmpty)
-                          ? const Icon(Icons.person, size: 50, color: Color(0xFFEF4444))
+                          ? const Icon(Icons.person, size: 50, color: Color(0xFFEF4444)) 
                           : null,
                     );
                   },
                 ),
-
+                
                 const SizedBox(height: 20),
 
                 // 2. TEKS PERTANYAAN
@@ -668,16 +641,17 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         child: ElevatedButton(
                           onPressed: () async {
                             Navigator.pop(dialogContext); // Tutup dialog konfirmasi
-
+                            
                             // Tampilkan Loading sebentar
                             showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (c) => const Center(child: CircularProgressIndicator()));
-
+                              context: context, 
+                              barrierDismissible: false, 
+                              builder: (c) => const Center(child: CircularProgressIndicator())
+                            );
+                            
                             await Future.delayed(const Duration(milliseconds: 500)); // Efek visual
                             await AuthService().logout(); // Logout Firebase
-
+                            
                             if (context.mounted) {
                               Navigator.pop(context); // Tutup loading
                               // Pindah ke Login Screen
@@ -692,12 +666,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                             elevation: 0,
                           ),
-                          child: const Text("Ya",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          child: const Text("Ya", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
                       ),
                     ),
-
+                    
                     const SizedBox(width: 15),
 
                     // TOMBOL TIDAK (BATAL)
@@ -711,8 +684,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                             elevation: 0,
                           ),
-                          child: const Text("Tidak",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          child: const Text("Tidak", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
                       ),
                     ),
@@ -726,20 +698,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // ===========================================================================
+// ===========================================================================
   // BOTTOM NAVIGATION BAR (CUSTOM - PIPIH & PRESISI TENGAH)
   // ===========================================================================
   Widget _buildBottomNavBar() {
     return Container(
       height: 80, // Tinggi area aman bawah
       decoration: const BoxDecoration(
-        color: Colors.transparent,
+        color: Colors.transparent, 
       ),
       child: Stack(
         children: [
           Positioned(
-            left: 20,
-            right: 20,
+            left: 20, 
+            right: 20, 
             bottom: 20, // Melayang dari bawah
             child: Container(
               height: 65, // Tinggi Bar "Pipih"
@@ -763,7 +735,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildNavItem(0, Icons.home_rounded, Icons.home_outlined),
-                  _buildNavItem(1, Icons.notifications_rounded, Icons.notifications_outlined),
+                  _buildNavItem(1, Icons.notifications_rounded, Icons.notifications_outlined), 
                   _buildNavItem(2, Icons.person_rounded, Icons.person_outline),
                 ],
               ),
@@ -795,7 +767,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           color: isSelected ? const Color(0xFF764BA2) : Colors.white70,
           size: 28, // Ukuran ikon pas
         ),
-     ),
-);
-}
+      ),
+    );
+  }
 }
