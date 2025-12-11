@@ -1,173 +1,147 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    // Warna Tema (Sama dengan Home)
-    const Color primaryColorStart = Color(0xFF8E78FF);
-    const Color primaryColorEnd = Color(0xFF764BA2);
+    String uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Abu-abu terang
+      backgroundColor: const Color(0xfff3f3f3),
       body: Column(
         children: [
-          // --- HEADER MODERN ---
+          // =========================
+          // 🔵 HEADER UNGU
+          // =========================
           Container(
-            padding: const EdgeInsets.only(top: 50, left: 20, right: 20, bottom: 25),
             width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 25),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [primaryColorStart, primaryColorEnd],
+                colors: [Color(0xff7f5eff), Color(0xff6b53ff)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
               ),
             ),
             child: Row(
               children: [
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
+                  child: const Icon(Icons.arrow_back_ios, color: Colors.white),
                 ),
-                const SizedBox(width: 15),
+                const Spacer(),
                 const Text(
-                  "Riwayat Transaksi",
+                  "History",
                   style: TextStyle(
-                    color: Colors.white, 
-                    fontSize: 22, 
+                    fontSize: 26,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5
                   ),
                 ),
+                const Spacer(),
               ],
             ),
           ),
 
-          // --- LIST HISTORY ---
+          const SizedBox(height: 20),
+
+          // =========================
+          // 🔥 LIST HISTORY
+          // =========================
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('peminjaman')
-                  .where('uid', isEqualTo: user?.uid) 
-                  .orderBy('created_at', descending: true) 
+                  .collection("peminjaman")
+                  .where("user_uid", isEqualTo: uid)
+                  .where("status", isEqualTo: "selesai")
+                  .orderBy("tgl_pinjam", descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.history_toggle_off, size: 80, color: Colors.grey[300]),
-                        const SizedBox(height: 10),
-                        Text("Belum ada riwayat transaksi", style: TextStyle(color: Colors.grey[500], fontSize: 16)),
-                      ],
+                var data = snapshot.data!.docs;
+
+                if (data.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "Belum ada riwayat transaksi",
+                      style: TextStyle(fontSize: 16),
                     ),
                   );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: snapshot.data!.docs.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: data.length,
                   itemBuilder: (context, index) {
-                    var data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                    
-                    // Warna & Ikon Status
-                    String status = data['status'] ?? 'Pending';
-                    Color statusColor = Colors.orange;
-                    IconData statusIcon = Icons.access_time_filled;
-
-                    if (status == 'Disetujui') {
-                      statusColor = Colors.green;
-                      statusIcon = Icons.check_circle;
-                    } else if (status == 'Ditolak') {
-                      statusColor = Colors.red;
-                      statusIcon = Icons.cancel;
-                    } else if (status == 'Dikembalikan') {
-                      statusColor = Colors.blue;
-                      statusIcon = Icons.assignment_return;
-                    }
-
-                    // Format Tanggal
-                    String tglPinjam = "-";
-                    if (data['tgl_pinjam'] != null) {
-                      DateTime tgl = (data['tgl_pinjam'] as Timestamp).toDate();
-                      tglPinjam = DateFormat('dd MMM yyyy').format(tgl);
-                    }
+                    var map = data[index].data() as Map<String, dynamic>;
 
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 15),
+                      margin: const EdgeInsets.only(bottom: 20),
                       padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))
+                          BoxShadow(
+                            color: Colors.black12.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
                       child: Row(
                         children: [
-                          // Icon Kotak Kiri
-                          Container(
-                            width: 50, height: 50,
-                            decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
+                          // GAMBAR
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              map["gambar"],
+                              width: 70,
+                              height: 70,
+                              fit: BoxFit.contain,
                             ),
-                            child: Icon(statusIcon, color: statusColor),
                           ),
+
                           const SizedBox(width: 15),
-                          
-                          // Info Barang
+
+                          // INFO HISTORY
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  data['barang'] ?? "Nama Barang",
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                                  "Kode ${map['kode_barang']}",
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
-                                    const SizedBox(width: 4),
-                                    Text(tglPinjam, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                  ],
+                                Text(
+                                  "${_format(map['tgl_pinjam'])} - ${_format(map['tgl_kembali'])}",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                Text(
+                                  "Jumlah: ${map['jumlah_pinjam']}",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
                                 ),
                               ],
-                            ),
-                          ),
-
-                          // Badge Status Kanan
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              status,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
                             ),
                           ),
                         ],
@@ -181,5 +155,21 @@ class HistoryScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // ===========================
+  // 📅 FORMAT TANGGAL
+  // ===========================
+  static String _format(Timestamp t) {
+    DateTime d = t.toDate();
+    return "${d.day} ${_bulan(d.month)} ${d.year}";
+  }
+
+  static String _bulan(int m) {
+    const bulan = [
+      "Jan","Feb","Mar","Apr","Mei","Jun",
+      "Jul","Agu","Sep","Okt","Nov","Des"
+    ];
+    return bulan[m - 1];
   }
 }
