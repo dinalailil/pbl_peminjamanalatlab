@@ -81,6 +81,57 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+
+Future<String?> pilihLaboratorium(BuildContext context) async {
+  return await showDialog<String>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "Pilih Laboratorium",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection("laboratorium")
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              var labs = snapshot.data!.docs;
+
+              return ListView.builder(
+                shrinkWrap: true,
+                itemCount: labs.length,
+                itemBuilder: (context, index) {
+                  var data = labs[index].data() as Map<String, dynamic>;
+
+                  String namaLab = data["nama"] ?? "Tanpa Nama";
+
+                  return ListTile(
+                    title: Text(namaLab),
+                    subtitle: Text("Lantai: ${data['lantai'] ?? '-'}"),
+                    onTap: () {
+                     Navigator.pop(context, data["nama"]);
+
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
   
 
   // ===========================================================================
@@ -177,13 +228,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   left: 20,
                   right: 20,
                   child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const CatalogScreen()),
-                      );
-                    },
+                    onTap: () async {
+  String? labId = await pilihLaboratorium(context);
+
+  if (labId == null) return;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CatalogScreen(labName: labId), 
+    ),
+  );
+},
+
                     child: Container(
                       height: 55,
                       padding: const EdgeInsets.symmetric(horizontal: 15),
