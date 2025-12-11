@@ -14,318 +14,862 @@ class AdminHomeScreen extends StatefulWidget {
 }
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
-  bool _isMenuOpen = false;
+  int _selectedIndex = 0;
+
+  // Warna Tema (Ungu Halus)
+  final Color primaryColorStart = const Color(0xFF8E78FF);
+  final Color primaryColorEnd = const Color(0xFF764BA2);
+  final Color scaffoldBgColor = const Color(0xFFF8F9FA);
+
+  // Data Dummy Top Borrowed
+  final List<Map<String, String>> _topItems = [
+    {"name": "Proyektor Epson", "code": "Alt001", "image":"https://tse3.mm.bing.net/th/id/OIP.OeOqeXR8-0NM-913ZQOQuQHaEJ?pid=Api&P=0&h=180"}, // Ganti dengan aset lokal jika ada
+    {"name": "Laptop Lenovo", "code": "Alt002", "image": "https://e7.pngegg.com/pngimages/552/936/png-clipart-laptop-lenovo-ideapad-720-lenovo-ideapad-710s-plus-laptop-electronics-gadget.png"},
+    {"name": "Mouse Wireless", "code": "Alt003", "image": "https://www.nicepng.com/png/detail/74-746964_hp-z5000-dark-ash-silver-wireless-mouse.png"},
+  ];
+
+  // Data Dummy Lab
+  final List<String> _labList = [
+    "Lab AI Lt. 7B",
+    "Lab Jaringan Lt. 7B",
+    "Lab Multimedia Lt. 7B",
+    "Lab AI2 Lt. 7T",
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final user = FirebaseAuth.instance.currentUser;
+    final List<Widget> pages = [
+      _buildHomeBeranda(),
+      _buildPermintaanTab(),
+      _buildRiwayatTab(),
+    ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F6F6),
-      body: Column(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            height: _isMenuOpen ? size.height * 0.36 : size.height * 0.30,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8E78FF),
-                  Color(0xFF764BA2),
+      backgroundColor: scaffoldBgColor,
+      body: pages[_selectedIndex],
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  // =================================================================
+  // 🟣 HOME TAB
+  // =================================================================
+  Widget _buildHomeBeranda() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        // ====================== HEADER ==========================
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [primaryColorStart, primaryColorEnd],
+            ),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(40),
+              bottomRight: Radius.circular(40),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // === Row Profile + Logout ===
+              Row(
+                children: [
+                  // Profile icon
+                  Container(
+                    width: 55,
+                    height: 55,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      size: 30,
+                      color: Colors.grey,
+                    ),
+                  ),
+
+                  const SizedBox(width: 15),
+
+                  // Nama Admin (Realtime)
+                  Expanded(
+                    child: StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user?.uid)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        String namaUser = "Admin";
+
+                        if (snapshot.hasData && snapshot.data!.exists) {
+                          var data =
+                              snapshot.data!.data() as Map<String, dynamic>;
+                          namaUser = data['nama'] ?? "Admin";
+                        }
+
+                        return Text(
+                          "Hallo $namaUser",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // ⭐ Logout icon
+                  IconButton(
+                    onPressed: () => _showLogoutDialog(context),
+                    icon: const Icon(
+                      Icons.logout,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
                 ],
               ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
+
+              const SizedBox(height: 10),
+
+              const Text(
+                "Selamat Datang di Labify",
+                style: TextStyle(color: Colors.white, fontSize: 14),
               ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 4),
+
+              const Text(
+                "Cek peminjaman hari ini!",
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Tanggal pill
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 55,
-                          height: 55,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(Icons.person, color: Colors.grey, size: 30),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: StreamBuilder<DocumentSnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(user?.uid)
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              String namaUser = "Admin";
-                              if (snapshot.hasData && snapshot.data!.exists) {
-                                var data = snapshot.data!.data() as Map<String, dynamic>;
-                                namaUser = data['nama'] ?? "Admin";
-                              }
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Halo, Admin $namaUser",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  // Jika menu tertutup, tampilkan slogan. Jika terbuka, tampilkan tanggal kecil
-                                  if (_isMenuOpen)
-                                     const Text(
-                                      "Selasa, 18 November 2025",
-                                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                                    )
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-
-                        IconButton(
-                          onPressed: () {
-                            setState(() => _isMenuOpen = !_isMenuOpen);
-                          },
-                          icon: Icon(
-                            _isMenuOpen ? Icons.close : Icons.logout,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20), // Jarak antara profil dan tanggal
-
-                    // --- KONTEN BAWAH HEADER (Berubah sesuai Menu) ---
-                    Expanded(
-                      child: _isMenuOpen 
-                      ? _buildDropdownMenu(context) // Tampilan Menu (Gbr Tengah)
-                      : _buildDefaultHeaderContent(), // Tampilan Normal (Gbr Kiri)
+                    Icon(Icons.calendar_month, color: Colors.white, size: 14),
+                    SizedBox(width: 8),
+                    Text(
+                      "Selasa, 18 November 2025",
+                      style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
+        ),
 
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                _buildFeatureCard(
-                  icon: Icons.check_circle,
-                  title: "Daftar Permintaan",
-                  iconColor: Colors.green,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DaftarPermintaanScreen(),
-                      ),
-                    );
-                  },
+        const SizedBox(height: 25),
+
+        // JUDUL SECTION: Top 3 Borrowed
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            "Top 3 Most Borrowed Items",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+
+        const SizedBox(height: 15),
+
+        // LIST HORIZONTAL BARANG
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: _topItems.length,
+            itemBuilder: (context, index) {
+              return Container(
+                width: 140,
+                margin: const EdgeInsets.only(right: 15),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 5,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-
-                _buildFeatureCard(
-                  icon: Icons.history,
-                  title: "History Peminjaman",
-                  iconColor: Colors.black,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const HistoryPeminjamanScreen(),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.network(
+                      _topItems[index]['image']!,
+                      height: 60,
+                      width: 80,
+                      fit: BoxFit.contain,
+                      errorBuilder: (c, e, s) =>
+                          const Icon(Icons.image, size: 50, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _topItems[index]['name']!,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
-                    );
-                  },
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                    ),
+                    Text(
+                      "Kode : ${_topItems[index]['code']}",
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
+              );
+            },
+          ),
+        ),
 
-                _buildFeatureCard(
-                  icon: Icons.inventory_2,
-                  title: "Cek Ketersediaan Barang",
-                  iconColor: Colors.orange,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CekKetersediaanScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
+        const SizedBox(height: 30),
 
-  Widget _buildDefaultHeaderContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Tanggal Pill
+        // JUDUL SECTION: Laboratorium (Dengan Background Biru Muda)
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
+            color: const Color(0xFFCBE6FF), // Biru Muda
+            borderRadius: BorderRadius.circular(12),
           ),
           child: const Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.calendar_today, color: Colors.white, size: 14),
-              SizedBox(width: 8),
+              Icon(Icons.storage, color: Colors.black87),
+              SizedBox(width: 10),
               Text(
-                "Selasa, 18 November 2025",
-                style: TextStyle(color: Colors.white, fontSize: 12),
+                "Cek Ketersediaan",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
           ),
-        )
-      ],
-    );
-  }
+        ),
 
-  Widget _buildDropdownMenu(BuildContext context) {
-    return Column(
-      children: [
-        _buildMenuItem(
-          title: "Log Out",
-          onTap: () {
-            _showLogoutDialog(context);
+        const SizedBox(height: 10),
+
+        // LIST LABORATORIUM (Vertical)
+        ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _labList.length,
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CekKetersediaanScreen(
+                      namaLab: _labList[index], // <-- KIRIM NAMA LAB
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.circle,
+                          size: 12,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 15),
+                        Text(
+                          _labList[index],
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 14,
+                      color: Colors.black87,
+                    ),
+                  ],
+                ),
+              ),
+            );
           },
         ),
       ],
     );
   }
 
-  Widget _buildMenuItem({required String title, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0),
-        child: Row(
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+  // ===========================================================================
+  // TAB 2: PEMINJAMAN
+  // ===========================================================================
+  Widget _buildPermintaanTab() {
+    return Scaffold(
+      backgroundColor: scaffoldBgColor,
+      body: Column(
+        children: [
+          // ====================== HEADER UNGU ==========================
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryColorStart, primaryColorEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
               ),
             ),
-            const Spacer(),
-          ],
+            child: const Column(
+              children: [
+                Text(
+                  "Daftar Permintaan",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ====================== LIST PERMINTAAN ==========================
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                _buildPermintaanCard(
+                  status: "Menunggu Persetujuan",
+                  kode: "Alt001",
+                  ruang: "Lab AI2 Lt.7T",
+                  showStatus: true,
+                ),
+                const SizedBox(height: 15),
+
+                _buildPermintaanCard(
+                  status: "Menunggu Persetujuan",
+                  kode: "Alt003",
+                  ruang: "Lab AI Lt.7T",
+                ),
+                const SizedBox(height: 15),
+
+                _buildPermintaanCard(
+                  status: "Menunggu Persetujuan",
+                  kode: "Alt001",
+                  ruang: "Lab AI Lt.7T",
+                ),
+                const SizedBox(height: 15),
+
+                _buildPermintaanCard(
+                  status: "Menunggu Persetujuan",
+                  kode: "Alt002",
+                  ruang: "Lab AI Lt.7T",
+                ),
+                const SizedBox(height: 15),
+
+                _buildPermintaanCard(
+                  status: "Menunggu Persetujuan",
+                  kode: "Alt002",
+                  ruang: "Lab AI Lt.7T",
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPermintaanCard({
+    required String status,
+    required String kode,
+    required String ruang,
+    bool showStatus = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon Jam Pasir
+          const Icon(
+            Icons.hourglass_empty_rounded,
+            size: 45,
+            color: Colors.black87,
+          ),
+          const SizedBox(width: 18),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // STATUS
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      status,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    // Badge PROSES hanya di card pertama
+                    if (showStatus)
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.greenAccent.shade400,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          "Proses",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  "Kode : $kode",
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+
+                Text(
+                  "Ruang : $ruang",
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Colors.black87,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // Tombol Detail
+                GestureDetector(
+                  onTap: () {},
+                  child: const Text(
+                    "Detail",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 15,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // TAB 3: RIWAYAT
+  // ===========================================================================
+  Widget _buildRiwayatTab() {
+    return Scaffold(
+      backgroundColor: scaffoldBgColor,
+      body: Column(
+        children: [
+          // ====================== HEADER UNGU ==========================
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryColorStart, primaryColorEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+            child: Column(
+              children: [
+                const Text(
+                  "Riwayat Peminjaman",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ===================== SEARCH BAR ======================
+                Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.grey),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: "Search",
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ====================== LIST RIWAYAT ==========================
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                _buildRiwayatCard("Aliando Setiawan"),
+                const SizedBox(height: 15),
+
+                _buildRiwayatCard("Dinarul"),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // CARD RIWAYAT
+  // ===========================================================================
+  Widget _buildRiwayatCard(String nama) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            nama,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          GestureDetector(
+            onTap: () {
+              // TODO: Arahkan ke halaman detail
+            },
+            child: const Text(
+              "Detail",
+              style: TextStyle(
+                fontSize: 15,
+                decoration: TextDecoration.underline,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  //===========================================================================
+  // BOTTOM NAVIGATION BAR (CUSTOM - PIPIH & PRESISI TENGAH)
+  // ===========================================================================
+  Widget _buildBottomNavBar() {
+    return Container(
+      height: 80, // Tinggi area aman bawah
+      decoration: const BoxDecoration(
+        color: Colors.transparent, 
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 20, 
+            right: 20, 
+            bottom: 20, // Melayang dari bawah
+            child: Container(
+              height: 65, // Tinggi Bar "Pipih"
+              decoration: BoxDecoration(
+                // Gradient Ungu
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(35), // Sudut bulat penuh (Pil)
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF764BA2).withOpacity(0.4),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(0, Icons.home_rounded, Icons.home_outlined),
+                  _buildNavItem(1, Icons.check_circle_rounded, Icons.check_circle_outlined), 
+                  _buildNavItem(2, Icons.history_rounded, Icons.history_outlined),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper Widget untuk Item Navigasi Custom
+  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon) {
+    bool isSelected = _selectedIndex == index;
+
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          // Jika aktif: Background Putih. Jika tidak: Transparan
+          color: isSelected ? Colors.white : Colors.transparent,
+          shape: BoxShape.circle, // Bentuk lingkaran indikator
+        ),
+        child: Icon(
+          isSelected ? activeIcon : inactiveIcon, // Ganti icon isi/garis
+          // Jika aktif: Icon Ungu. Jika tidak: Icon Putih
+          color: isSelected ? const Color(0xFF764BA2) : Colors.white70,
+          size: 28, // Ukuran ikon pas
         ),
       ),
     );
   }
 
-   void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Konfirmasi Logout"),
-          content: const Text("Apakah Anda yakin ingin keluar dari aplikasi?"),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Batal", style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await AuthService().logout();
-                if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      barrierDismissible: true,
+      builder: (context) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.85,
+              padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: const Text("Ya, Keluar", style: TextStyle(color: Colors.white)),
+
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+
+                  // =============================
+                  // ICON PERSON + OUTLINE CIRCLE
+                  // =============================
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.black87,
+                        width: 3,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      size: 55,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // =============================
+                  // TEXT
+                  // =============================
+                  const Text(
+                    "Apakah anda yakin\nkeluar dari aplikasi?",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // =============================
+                  // BUTTON YA / TIDAK
+                  // =============================
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+
+                      // ===== BUTTON YA =====
+                      GestureDetector(
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await AuthService().logout();
+
+                          if (context.mounted) {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              '/login',
+                              (route) => false,
+                            );
+                          }
+                        },
+                        child: Container(
+                          width: 110,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              "Ya",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // ===== BUTTON TIDAK =====
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 110,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              "Tidak",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         );
       },
-    );
-  }
-
-  Widget _divider() => const Divider(color: Colors.white54, thickness: 0.5);
-
-  Widget _buildFeatureCard({
-    required IconData icon,
-    required String title,
-    required Color iconColor,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.15),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            )
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: iconColor, size: 32),
-            ),
-            const SizedBox(width: 20),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            )
-          ],
-        ),
-      ),
     );
   }
 }

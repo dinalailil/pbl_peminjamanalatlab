@@ -1,89 +1,103 @@
 import 'package:flutter/material.dart';
 
 class CekKetersediaanScreen extends StatelessWidget {
-  const CekKetersediaanScreen({super.key});
+  final String namaLab;
+
+  const CekKetersediaanScreen({super.key, required this.namaLab});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F6F6),
+      backgroundColor: const Color(0xFFF5F5F5),
+
       body: Column(
         children: [
-          // ================== HEADER ==================
+          // ===================== HEADER GRADIENT ======================
           Container(
             width: double.infinity,
-            height: 180,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
+                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8E78FF),
-                  Color(0xFF764BA2),
-                ],
               ),
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
+                bottomLeft: Radius.circular(60),
+                bottomRight: Radius.circular(60),
               ),
             ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back_ios,
-                              color: Colors.white),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "Cek Ketersediaan\nBarang",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+            child: Column(
+              children: [
+                // BACK BUTTON
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.arrow_back_ios,
+                        color: Colors.white, size: 28),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 10),
+
+                // TITLE
+                const Text(
+                  "Cek Stok\nBarang",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    height: 1.2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                // SUBTITLE (NAMA LAB)
+                Text(
+                  namaLab,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
 
-          // ================== LIST ==================
+          const SizedBox(height: 25),
+
+          // ====================== GRID BARANG ==========================
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
+            child: GridView.count(
+              crossAxisCount: 2,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              crossAxisSpacing: 20,
+              mainAxisSpacing: 25,
+              childAspectRatio: 0.78,
+
               children: [
-                _buildKetersediaanCard(
-                  avatarColor: Colors.blue.shade300,
-                  kode: "",
-                  tanggal: "",
-                  withText: false,
+                _itemCard(
+                  image: "assets/proyektor.png",
+                  nama: "Proyektor Epson",
+                  kode: "Alt001",
+                  tersedia: 5,
+                  terpinjam: 2,
                 ),
-
-                const SizedBox(height: 20),
-
-                _buildKetersediaanCard(
-                  avatarColor: Colors.red.shade300,
-                  kode: "Kode Alt002",
-                  tanggal: "26 Okt 2025 - 27 Okt 2025",
+                _itemCard(
+                  image: "assets/laptop.png",
+                  nama: "Laptop Lenovo",
+                  kode: "Alt002",
+                  tersedia: 5,
+                  terpinjam: 0,
                 ),
-
-                const SizedBox(height: 20),
-
-                _buildKetersediaanCard(
-                  avatarColor: Colors.orange.shade300,
-                  kode: "Kode Alt001",
-                  tanggal: "01 Sept 2025 - 02 Okt 2025",
+                _itemCard(
+                  image: "assets/mouse.png",
+                  nama: "Mouse HP",
+                  kode: "Alt003",
+                  tersedia: 5,
+                  terpinjam: 1,
                 ),
               ],
             ),
@@ -93,69 +107,64 @@ class CekKetersediaanScreen extends StatelessWidget {
     );
   }
 
-  // ================== CARD COMPONENT ==================
-  Widget _buildKetersediaanCard({
-    required Color avatarColor,
+  // ====================================================================
+  // CARD BARANG
+  // ====================================================================
+  Widget _itemCard({
+    required String image,
+    required String nama,
     required String kode,
-    required String tanggal,
-    bool withText = true,
+    required int tersedia,
+    required int terpinjam,
   }) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
+            color: Colors.black.withOpacity(0.07),
             blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
+            offset: const Offset(0, 5),
+          ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // Avatar
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: avatarColor,
-            child: const Icon(Icons.person, color: Colors.white, size: 32),
+          Image.asset(image, height: 75),
+          const SizedBox(height: 10),
+
+          Text(
+            nama,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            "Kode : $kode",
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 13,
+            ),
           ),
 
-          const SizedBox(width: 16),
+          const SizedBox(height: 12),
 
-          // Keterangan
-          Expanded(
-            child: withText
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        kode,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        tanggal,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54),
-                      )
-                    ],
-                  )
-                : const SizedBox(),
-          ),
-
-          // Lihat Detail
-          if (withText)
-            const Text(
-              "Lihat Detail",
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              "tersedia : $tersedia\nTerpinjam : $terpinjam",
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                height: 1.4,
+                color: Colors.grey.shade800,
+                fontSize: 14,
               ),
             ),
+          ),
         ],
       ),
     );
