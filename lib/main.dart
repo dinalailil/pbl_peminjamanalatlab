@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:pbl_peminjamanalatlab/screens/user/notification_screen.dart';
 import 'package:provider/provider.dart';
 
 // Import semua file yang dibutuhkan
@@ -43,6 +44,8 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/user-dashboard': (context) => const UserHomeScreen(),
           '/admin-dashboard': (context) => const AdminHomeScreen(),
+          '/notifikasi': (context) => const NotificationScreen(),
+
         },
       ),
     );

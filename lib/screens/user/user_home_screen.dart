@@ -81,6 +81,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+  
+
   // ===========================================================================
   // TAB 1: BERANDA (REVISI SESUAI GAMBAR)
   // ===========================================================================
@@ -389,10 +391,201 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   // TAB NOTIFIKASI
   // ====================================================================
   Widget _buildNotificationTab() {
-    return const Center(
-      child: Text("Notifikasi (belum dibuat)"),
-    );
-  }
+  String uid = FirebaseAuth.instance.currentUser!.uid;
+
+  return Column(
+    children: [
+      // HEADER UNGU
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 60, 20, 25),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xff7f5eff), Color(0xff6b53ff)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(40),
+            bottomRight: Radius.circular(40),
+          ),
+        ),
+        child: const Center(
+          child: Text(
+            "Notifikasi",
+            style: TextStyle(
+              fontSize: 26,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+
+      const SizedBox(height: 20),
+
+      // LIST NOTIF (Expand harus di luar Column)
+      Expanded(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection("peminjaman")
+              .where("user_uid", isEqualTo: uid)
+              .orderBy("created_at", descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            var data = snapshot.data!.docs;
+
+            if (data.isEmpty) {
+              return const Center(
+                child: Text(
+                  "Tidak ada notifikasi",
+                  style: TextStyle(fontSize: 16),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: data.length,
+              itemBuilder: (context, index) {
+                var item = data[index];
+                var map = item.data() as Map<String, dynamic>;
+                print("DEBUG GAMBAR = ${map['gambar']}");
+print("TIPE GAMBAR = ${map['gambar']?.runtimeType}");
+
+
+                String status = map["status"] ?? "-";
+                String statusText = "";
+
+               // STATUS TEXT
+if (status == "disetujui") {
+  statusText = "Proses Disetujui";
+} else if (status == "dipinjam") {
+  statusText = "Proses Peminjaman";
+} else if (status == "ditolak") {                  
+  statusText = "Pengajuan Ditolak";
+} else {
+  return const SizedBox.shrink();
+}
+
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // GAMBAR ALAT
+                   ClipRRect(
+  borderRadius: BorderRadius.circular(12),
+  child: Image.network(
+    map["gambar"],
+    width: 70,
+    height: 70,
+    fit: BoxFit.contain, // → ubah di sini
+  ),
+),
+
+
+                      const SizedBox(width: 15),
+
+                      // INFO ALAT
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Kode ${map['kode_barang']}",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "${_format(map['tgl_pinjam'])} - ${_format(map['tgl_kembali'])}",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            Text(
+                              "Jumlah: ${map['jumlah_pinjam']}",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // STATUS
+                     // STATUS BADGE
+Container(
+  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+  decoration: BoxDecoration(
+    color: status == "disetujui"
+        ? Colors.greenAccent.shade100
+        : status == "dipinjam"
+            ? Colors.blueAccent.shade100
+            : Colors.redAccent.shade100,               // 👉 ditolak
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Text(
+    statusText,
+    style: TextStyle(
+      color: status == "disetujui"
+          ? Colors.green
+          : status == "dipinjam"
+              ? Colors.blue
+              : Colors.red,                            // 👉 ditolak
+      fontWeight: FontWeight.bold,
+      fontSize: 12,
+    ),
+  ),
+)
+
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    ],
+  );
+}
+
+// FORMAT TANGGAL
+String _format(Timestamp t) {
+  DateTime d = t.toDate();
+  return "${d.day} ${_bulan(d.month)} ${d.year}";
+}
+
+String _bulan(int m) {
+  const b = [
+    "Jan","Feb","Mar","Apr","Mei","Jun",
+    "Jul","Agu","Sep","Okt","Nov","Des"
+  ];
+  return b[m - 1];
+}
+
 
   // ===========================================================================
   // TAB 3: PROFIL (HEADER FULL BLOCK + JUDUL TENGAH)
@@ -746,28 +939,39 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+  
+
   // Helper Widget untuk Item Navigasi Custom
   Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon) {
-    bool isSelected = _selectedIndex == index;
+  bool isSelected = _selectedIndex == index;
 
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          // Jika aktif: Background Putih. Jika tidak: Transparan
-          color: isSelected ? Colors.white : Colors.transparent,
-          shape: BoxShape.circle, // Bentuk lingkaran indikator
-        ),
-        child: Icon(
-          isSelected ? activeIcon : inactiveIcon, // Ganti icon isi/garis
-          // Jika aktif: Icon Ungu. Jika tidak: Icon Putih
-          color: isSelected ? const Color(0xFF764BA2) : Colors.white70,
-          size: 28, // Ukuran ikon pas
-        ),
+  return GestureDetector(
+    onTap: () {
+      // === Navigasi disesuaikan ===
+if (index == 1) {
+  _onItemTapped(1);   // pindah tab, bukan buka halaman
+  return;
+}
+
+
+      // Jika Home atau Profile
+      _onItemTapped(index);
+    },
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.white : Colors.transparent,
+        shape: BoxShape.circle,
       ),
-    );
-  }
+      child: Icon(
+        isSelected ? activeIcon : inactiveIcon,
+        color: isSelected ? const Color(0xFF764BA2) : Colors.white70,
+        size: 28,
+      ),
+    ),
+  );
+}
+
 }

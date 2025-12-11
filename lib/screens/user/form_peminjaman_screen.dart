@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -72,15 +73,18 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
         });
 
         tx.set(pinjamRef.doc(), {
-          "nama_peminjam": namaController.text,
-          "jumlah_pinjam": jumlahPinjam,
-          "keperluan": keperluanController.text,
-          "kode_barang": widget.data['kode'],
-          "nama_barang": widget.data['nama'],
-          "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
-          "tgl_kembali": Timestamp.fromDate(tglKembali!),
-          "status": "diajukan",
-          "created_at": FieldValue.serverTimestamp(),
+    "user_uid": FirebaseAuth.instance.currentUser!.uid,   // otomatis — tidak tampil di UI
+  "nama_peminjam": namaController.text,
+  "kode_barang": widget.data['kode'],
+  "nama_barang": widget.data['nama'],
+  "jumlah_pinjam": jumlahPinjam,        // tetap dipakai jika kamu punya field jumlah pinjam
+  "keperluan": keperluanController.text, // jika form kamu punya ini
+   "gambar": widget.data['gambar'] ?? "",
+
+  "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
+  "tgl_kembali": Timestamp.fromDate(tglKembali!),
+  "status": "diajukan",
+  "created_at": FieldValue.serverTimestamp(),
         });
       });
 
