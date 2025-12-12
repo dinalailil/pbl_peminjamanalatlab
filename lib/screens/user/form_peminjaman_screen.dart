@@ -5,7 +5,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FormPeminjamanScreen extends StatefulWidget {
   final QueryDocumentSnapshot data;
 
-  const FormPeminjamanScreen({super.key, required this.data, required labName});
+  const FormPeminjamanScreen({
+    super.key,
+    required this.data,
+  });
 
   @override
   State<FormPeminjamanScreen> createState() => _FormPeminjamanScreenState();
@@ -22,6 +25,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   DateTime? tglKembali;
   bool loading = false;
 
+  // =============================
+  // PICK TANGGAL
+  // =============================
   Future<void> pickDate(BuildContext context, bool isPinjam) async {
     final picked = await showDatePicker(
       context: context,
@@ -41,6 +47,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     }
   }
 
+  // =============================
+  // SUBMIT PEMINJAMAN
+  // =============================
   Future<void> submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -67,24 +76,30 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           throw Exception("Stok tidak mencukupi!");
         }
 
+        // Kurangi stok
         tx.update(alatRef, {
           "jumlah": stok - jumlahPinjam,
-          "status": (stok - jumlahPinjam) == 0 ? "dipinjam" : "tersedia"
+          "status": (stok - jumlahPinjam) == 0 ? "dipinjam" : "tersedia",
         });
 
+        // Simpan peminjaman
         tx.set(pinjamRef.doc(), {
-    "user_uid": FirebaseAuth.instance.currentUser!.uid,   // otomatis — tidak tampil di UI
-  "nama_peminjam": namaController.text,
-  "kode_barang": widget.data['kode'],
-  "nama_barang": widget.data['nama'],
-  "jumlah_pinjam": jumlahPinjam,        // tetap dipakai jika kamu punya field jumlah pinjam
-  "keperluan": keperluanController.text, // jika form kamu punya ini
-   "gambar": widget.data['gambar'] ?? "",
+          "user_uid": FirebaseAuth.instance.currentUser!.uid,
 
-  "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
-  "tgl_kembali": Timestamp.fromDate(tglKembali!),
-  "status": "diajukan",
-  "created_at": FieldValue.serverTimestamp(),
+          "alat_id": widget.data.id,
+          "kode_barang": widget.data['kode'],
+          "nama_barang": widget.data['nama'],
+          "gambar": widget.data['gambar'] ?? "",
+
+          "nama_peminjam": namaController.text,
+          "keperluan": keperluanController.text,
+          "jumlah_pinjam": jumlahPinjam,
+
+          "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
+          "tgl_kembali": Timestamp.fromDate(tglKembali!),
+
+          "status": "diajukan",
+          "created_at": FieldValue.serverTimestamp(),
         });
       });
 
@@ -106,16 +121,18 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   @override
   Widget build(BuildContext context) {
     final map = widget.data.data() as Map<String, dynamic>;
+    final stok = (map['jumlah'] as num).toInt();
     final warnaUngu = const Color(0xFF7A56FF);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: warnaUngu,
-        title: Text("Peminjaman (${map['kode']})",
-            style: const TextStyle(color: Colors.white)),
+        title: Text(
+          "Peminjaman (${map['kode']})",
+          style: const TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -125,7 +142,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
               Text(
                 map['nama'],
                 style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
 
               const SizedBox(height: 25),
@@ -133,66 +152,66 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
               // =============================
               // NAMA PEMINJAM
               // =============================
-              TextField(
+              TextFormField(
                 controller: namaController,
                 decoration: const InputDecoration(
                   labelText: "Nama Peminjam",
                   border: UnderlineInputBorder(),
                 ),
+                validator: (v) =>
+                    v == null || v.isEmpty ? "Nama tidak boleh kosong" : null,
               ),
 
               const SizedBox(height: 25),
 
               // =============================
-              // JUMLAH PINJAM (+ / -)
+              // JUMLAH PINJAM
               // =============================
               const Text(
-  "Jumlah Pinjam",
-  style: TextStyle(fontWeight: FontWeight.bold),
-),
-const SizedBox(height: 10),
+                "Jumlah Pinjam",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
 
-Container(
-  padding: const EdgeInsets.symmetric(horizontal: 15),
-  decoration: BoxDecoration(
-    border: Border(
-      bottom: BorderSide(color: Colors.grey.shade400, width: 1),
-    ),
-  ),
-  child: Row(
-    children: [
-      // Tombol minus
-      IconButton(
-        onPressed: jumlahPinjam > 1
-            ? () => setState(() => jumlahPinjam--)
-            : null,
-        icon: const Icon(Icons.remove_circle_outline),
-      ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade400, width: 1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: jumlahPinjam > 1
+                          ? () => setState(() => jumlahPinjam--)
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
 
-      // Nilai jumlah pinjam
-      Expanded(
-        child: Text(
-          jumlahPinjam.toString(),
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+                    Expanded(
+                      child: Text(
+                        jumlahPinjam.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
 
-      // Tombol plus
-      IconButton(
-        onPressed: () => setState(() => jumlahPinjam++),
-        icon: const Icon(Icons.add_circle_outline),
-      ),
-    ],
-  ),
-),
+                    IconButton(
+                      onPressed: jumlahPinjam < stok
+                          ? () => setState(() => jumlahPinjam++)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
+              ),
 
-const SizedBox(height: 25),
+              const SizedBox(height: 25),
 
-              
               // =============================
               // TANGGAL PINJAM
               // =============================

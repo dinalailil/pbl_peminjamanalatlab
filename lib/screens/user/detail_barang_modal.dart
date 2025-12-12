@@ -116,7 +116,7 @@ class DetailBarangModal extends StatelessWidget {
           MaterialPageRoute(
             builder: (_) => FormPeminjamanScreen(
               data: data,       // kirim data barang
-              labName: labName, // kirim lab (opsional)
+             
             ),
           ),
         );

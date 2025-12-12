@@ -59,28 +59,37 @@ Stream<QuerySnapshot> getFilteredStream() {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title + Back Button
-               Row(
-  children: [
-    Expanded(
-      child: Text(
-        widget.labName != null
-            ? "Katalog - ${widget.labName}"
-            : "Katalog Barang",
-        style: const TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+              Padding(
+  padding: const EdgeInsets.only(top: 40, left: 16, right: 16),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      // Tombol back kiri
+      IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Navigator.pop(context),
       ),
-    ),
-    IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white),
-      onPressed: () => Navigator.pop(context),
-    )
-  ],
+
+      // Judul di tengah
+      const Expanded(
+        child: Center(
+          child: Text(
+            "Katalog Barang",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+
+      // Placeholder untuk menyeimbangkan layout
+      const SizedBox(width: 48),
+    ],
+  ),
 ),
+
 
                 const SizedBox(height: 15),
 
@@ -108,40 +117,49 @@ Stream<QuerySnapshot> getFilteredStream() {
                 const SizedBox(height: 15),
 
                 // Filter Chips
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FilterChip(
-                      label: const Text("tersedia"),
-                      selected: selectedFilter == "tersedia",
-                      onSelected: (_) {
-                        setState(() {
-                          selectedFilter = "tersedia";
-                        });
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    FilterChip(
-                      label: const Text("dipinjam"),
-                      selected: selectedFilter == "dipinjam",
-                      onSelected: (_) {
-                        setState(() {
-                          selectedFilter = "dipinjam";
-                        });
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    FilterChip(
-                      label: const Text("Semua"),
-                      selected: selectedFilter == "Semua",
-                      onSelected: (_) {
-                        setState(() {
-                          selectedFilter = "Semua";
-                        });
-                      },
-                    ),
-                  ],
-                ),
+               // Filter Chips
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    // SEMUA
+    FilterChip(
+      label: const Text("Semua"),
+      selected: selectedFilter == "Semua",
+      onSelected: (_) {
+        setState(() {
+          selectedFilter = "Semua";
+        });
+      },
+    ),
+
+    const SizedBox(width: 10),
+
+    // TERSEDIA
+    FilterChip(
+      label: const Text("tersedia"),
+      selected: selectedFilter == "tersedia",
+      onSelected: (_) {
+        setState(() {
+          selectedFilter = "tersedia";
+        });
+      },
+    ),
+
+    const SizedBox(width: 10),
+
+    // DIPINJAM
+    FilterChip(
+      label: const Text("dipinjam"),
+      selected: selectedFilter == "dipinjam",
+      onSelected: (_) {
+        setState(() {
+          selectedFilter = "dipinjam";
+        });
+      },
+    ),
+  ],
+),
+
               ],
             ),
           ),
