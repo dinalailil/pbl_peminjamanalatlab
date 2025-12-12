@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'detail_barang_modal.dart';
 
+
 class CatalogScreen extends StatefulWidget {
   final String? labName; // ★ menerima nama lab
 
@@ -16,20 +17,22 @@ class _CatalogScreenState extends State<CatalogScreen> {
   String searchQuery = "";
 
   // ★ STREAM berdasarkan lab + filter
- Stream<QuerySnapshot> getFilteredStream() {
+Stream<QuerySnapshot> getFilteredStream() {
   Query alatRef = FirebaseFirestore.instance.collection('alat');
 
+  // ⭐ Filter berdasarkan LAB (kalau datang dari home/search)
   if (widget.labName != null) {
-   alatRef = alatRef.where('lab', arrayContains: widget.labName);
-
+    alatRef = alatRef.where('lab', arrayContains: widget.labName);
   }
 
+  // ⭐ Filter status (tersedia / dipinjam)
   if (selectedFilter != "Semua") {
     alatRef = alatRef.where('status', isEqualTo: selectedFilter);
   }
 
   return alatRef.snapshots();
 }
+
 
 
   @override
@@ -197,10 +200,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                     return InkWell(
                       onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => DetailBarangModal(data: item),
-                        );
+                       showDialog(
+  context: context,
+  builder: (_) => DetailBarangModal(
+    data: item,
+    labName: widget.labName, 
+  ),
+);
+
                       },
                       child: Container(
                         padding: const EdgeInsets.all(12),

@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FormPeminjamanScreen extends StatefulWidget {
   final QueryDocumentSnapshot data;
 
-  const FormPeminjamanScreen({super.key, required this.data});
+  const FormPeminjamanScreen({super.key, required this.data, required labName});
 
   @override
   State<FormPeminjamanScreen> createState() => _FormPeminjamanScreenState();

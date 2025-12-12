@@ -228,15 +228,12 @@ Future<String?> pilihLaboratorium(BuildContext context) async {
                   left: 20,
                   right: 20,
                   child: GestureDetector(
-                    onTap: () async {
-  String? labId = await pilihLaboratorium(context);
-
-  if (labId == null) return;
-
+                   onTap: () {
+  // Nanti isi untuk membuka halaman katalog
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => CatalogScreen(labName: labId), 
+      builder: (_) => CatalogScreen(labName: null), // tampilkan semua alat
     ),
   );
 },
