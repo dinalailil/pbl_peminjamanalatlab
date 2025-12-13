@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'history_peminjaman_detail_screen.dart';
 
-class HistoryPeminjamanScreen extends StatelessWidget {
+class HistoryPeminjamanScreen extends StatefulWidget {
   const HistoryPeminjamanScreen({super.key});
+
+  @override
+  State<HistoryPeminjamanScreen> createState() =>
+      _HistoryPeminjamanScreenState();
+}
+
+class _HistoryPeminjamanScreenState extends State<HistoryPeminjamanScreen> {
+  final TextEditingController searchController = TextEditingController();
+  String searchQuery = "";
 
   @override
   Widget build(BuildContext context) {
@@ -9,83 +20,144 @@ class HistoryPeminjamanScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF6F6F6),
       body: Column(
         children: [
-          // ================== HEADER ==================
+          // ================== HEADER + SEARCH ==================
           Container(
             width: double.infinity,
-            height: 180,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 25),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8E78FF),
-                  Color(0xFF764BA2),
-                ],
+                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
               ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(40),
                 bottomRight: Radius.circular(40),
               ),
             ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back_ios,
-                              color: Colors.white),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "History\nPeminjaman",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+            child: Column(
+              children: [
+                const Text(
+                  "Riwayat",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 20),
+
+                // ================== SEARCH BAR DI HEADER ==================
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value.toLowerCase();
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      hintText: "Search",
+                      border: InputBorder.none,
+                      icon: Icon(Icons.search, color: Colors.grey),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
-          // ================== LIST ==================
+          const SizedBox(height: 10),
+
+          // ================== LIST FIRESTORE ==================
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                _buildPeminjamanCard(
-                  avatarColor: Colors.blue.shade300,
-                  kode: "",
-                  tanggal: "",
-                  withText: false,
-                ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection("peminjaman")
+                  .where("status", isEqualTo: "selesai")
+                  .snapshots(),
+              builder: (context, snapshot) {
+                // Loading
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                const SizedBox(height: 20),
+                // Jika Firestore kosong (belum ada data selesai)
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "Belum ada riwayat peminjaman selesai.",
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
+                    ),
+                  );
+                }
 
-                _buildPeminjamanCard(
-                  avatarColor: Colors.red.shade300,
-                  kode: "Kode Alt002",
-                  tanggal: "26 Okt 2025 - 27 Okt 2025",
-                ),
+                // Ambil seluruh data dari Firestore
+                List<DocumentSnapshot> data = snapshot.data!.docs;
 
-                const SizedBox(height: 20),
+                // ================== FILTER LOCAL (SEARCH) ==================
+                List<DocumentSnapshot> filteredData = data.where((doc) {
+                  final pem = doc.data() as Map<String, dynamic>;
+                  final nama =
+                      (pem["nama_peminjam"] ?? pem["nama_user"] ?? "")
+                          .toString()
+                          .toLowerCase();
+                  return nama.contains(searchQuery);
+                }).toList();
 
-                _buildPeminjamanCard(
-                  avatarColor: Colors.orange.shade300,
-                  kode: "Kode Alt001",
-                  tanggal: "01 Sept 2025 - 02 Okt 2025",
-                ),
-              ],
+                // Jika hasil filter kosong, tampilkan pesan khusus search
+                if (filteredData.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "Data tidak ditemukan.",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: filteredData.length,
+                  itemBuilder: (context, index) {
+                    final item = filteredData[index];
+                    final pem = item.data() as Map<String, dynamic>;
+
+                    String nama =
+                        pem["nama_peminjam"] ?? pem["nama_user"] ?? "-";
+
+                    return Column(
+                      children: [
+                        _buildPeminjamanCard(
+                          nama: nama,
+                          onDetailTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    HistoryPeminjamanDetailScreen(data: item),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
@@ -95,13 +167,11 @@ class HistoryPeminjamanScreen extends StatelessWidget {
 
   // ================== CARD COMPONENT ==================
   Widget _buildPeminjamanCard({
-    required Color avatarColor,
-    required String kode,
-    required String tanggal,
-    bool withText = true,
+    required String nama,
+    required VoidCallback onDetailTap,
   }) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -110,52 +180,31 @@ class HistoryPeminjamanScreen extends StatelessWidget {
             color: Colors.grey.withOpacity(0.15),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Avatar
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: avatarColor,
-            child: const Icon(Icons.person, color: Colors.white, size: 32),
+          Text(
+            nama,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-
-          const SizedBox(width: 16),
-
-          // Keterangan
-          Expanded(
-            child: withText
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        kode,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        tanggal,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54),
-                      )
-                    ],
-                  )
-                : const SizedBox(),
-          ),
-
-          // Lihat Detail
-          if (withText)
-            const Text(
-              "Lihat Detail",
+          GestureDetector(
+            onTap: onDetailTap,
+            child: const Text(
+              "Detail",
               style: TextStyle(
-                fontSize: 12,
+                decoration: TextDecoration.underline,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
             ),
+          ),
         ],
       ),
     );

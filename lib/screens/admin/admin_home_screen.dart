@@ -5,6 +5,9 @@ import '../../services/auth_service.dart';
 import 'daftar_permintaan_screen.dart';
 import 'history_peminjaman_screen.dart';
 import 'detail_lab_admin_screen.dart';
+import 'detail_permintaan_screen.dart';
+import 'history_peminjaman_detail_screen.dart';
+
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -391,46 +394,57 @@ final List<Map<String, String>> _daftarLab = [
 
           const SizedBox(height: 20),
 
-          // ====================== LIST PERMINTAAN ==========================
+          // ====================== LIST FIRESTORE ==========================
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _buildPermintaanCard(
-                  status: "Menunggu Persetujuan",
-                  kode: "Alt001",
-                  ruang: "Lab AI2 Lt.7T",
-                  showStatus: true,
-                ),
-                const SizedBox(height: 15),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection("peminjaman")
+                  .orderBy("created_at", descending: true)
+                  .snapshots(),
 
-                _buildPermintaanCard(
-                  status: "Menunggu Persetujuan",
-                  kode: "Alt003",
-                  ruang: "Lab AI Lt.7T",
-                ),
-                const SizedBox(height: 15),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                _buildPermintaanCard(
-                  status: "Menunggu Persetujuan",
-                  kode: "Alt001",
-                  ruang: "Lab AI Lt.7T",
-                ),
-                const SizedBox(height: 15),
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text("Belum ada permintaan peminjaman"),
+                  );
+                }
 
-                _buildPermintaanCard(
-                  status: "Menunggu Persetujuan",
-                  kode: "Alt002",
-                  ruang: "Lab AI Lt.7T",
-                ),
-                const SizedBox(height: 15),
+                final docs = snapshot.data!.docs;
 
-                _buildPermintaanCard(
-                  status: "Menunggu Persetujuan",
-                  kode: "Alt002",
-                  ruang: "Lab AI Lt.7T",
-                ),
-              ],
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final d = docs[index].data() as Map<String, dynamic>;
+
+                    return Column(
+                      children: [
+                        _buildPermintaanCard(
+                          status: d["status"] ?? "Menunggu",
+                          kode: d["kode_barang"] ?? "-",
+                          ruang: d["nama_barang"] ?? "-",
+                          showStatus: d["status"] == "proses",
+                          onDetailTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetailPermintaanScreen(
+                                  data: docs[index],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 15),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
@@ -443,6 +457,7 @@ final List<Map<String, String>> _daftarLab = [
     required String kode,
     required String ruang,
     bool showStatus = false,
+    required VoidCallback onDetailTap,
   }) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -460,7 +475,6 @@ final List<Map<String, String>> _daftarLab = [
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon Jam Pasir
           const Icon(
             Icons.hourglass_empty_rounded,
             size: 45,
@@ -472,7 +486,6 @@ final List<Map<String, String>> _daftarLab = [
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // STATUS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -484,7 +497,6 @@ final List<Map<String, String>> _daftarLab = [
                       ),
                     ),
 
-                    // Badge PROSES hanya di card pertama
                     if (showStatus)
                       Container(
                         padding:
@@ -525,9 +537,8 @@ final List<Map<String, String>> _daftarLab = [
 
                 const SizedBox(height: 10),
 
-                // Tombol Detail
                 GestureDetector(
-                  onTap: () {},
+                  onTap: onDetailTap,
                   child: const Text(
                     "Detail",
                     style: TextStyle(
@@ -546,100 +557,171 @@ final List<Map<String, String>> _daftarLab = [
   }
 
   // ===========================================================================
-  // TAB 3: RIWAYAT
+  // TAB 3: RIWAYAT PEMINJAMAN (Admin) – Tampilan seperti User + Search Bar
   // ===========================================================================
   Widget _buildRiwayatTab() {
-    return Scaffold(
-      backgroundColor: scaffoldBgColor,
-      body: Column(
-        children: [
-          // ====================== HEADER UNGU ==========================
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [primaryColorStart, primaryColorEnd],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
-              ),
-            ),
-            child: Column(
-              children: [
-                const Text(
-                  "Riwayat Peminjaman",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
+    TextEditingController searchController = TextEditingController();
+    String searchQuery = "";
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Scaffold(
+          backgroundColor: const Color(0xFFF6F6F6),
+          body: Column(
+            children: [
+              // ================== HEADER + SEARCH ==================
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 25),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
                   ),
                 ),
-                const SizedBox(height: 20),
+                child: Column(
+                  children: [
+                    const Text(
+                      "Riwayat",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
 
-                // ===================== SEARCH BAR ======================
-                Container(
-                  height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.search, color: Colors.grey),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: "Search",
-                            border: InputBorder.none,
+                    const SizedBox(height: 20),
+
+                    // ================== SEARCH BAR DI HEADER ==================
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            searchQuery = value.toLowerCase();
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          hintText: "Search",
+                          border: InputBorder.none,
+                          icon: Icon(Icons.search, color: Colors.grey),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              
+              const SizedBox(height: 10),
+
+              // ====================== FIRESTORE LIST ==========================
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection("peminjaman")
+                      .where("status", isEqualTo: "selesai")
+                      .snapshots(),
+
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Center(
+                        child: Text("Belum ada riwayat peminjaman selesai."),
+                      );
+                    }
+
+                    List docs = snapshot.data!.docs;
+
+                    // ========== FILTER LOCAL BERDASARKAN SEARCH ==========
+                    if (searchQuery.isNotEmpty) {
+                      docs = docs.where((doc) {
+                        final d = doc.data() as Map<String, dynamic>;
+
+                        String nama = (d["nama_peminjam"] ?? "").toLowerCase();
+                        String kode = (d["kode_barang"] ?? "").toLowerCase();
+
+                        return nama.contains(searchQuery) ||
+                            kode.contains(searchQuery);
+                      }).toList();
+                    }
+
+                    if (docs.isEmpty) {
+                      return const Center(child: Text("Data tidak ditemukan."));
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        final d = docs[index].data() as Map<String, dynamic>;
+
+                        return Column(
+                          children: [
+                            _buildRiwayatCardUI(
+                              nama: d["nama_peminjam"] ?? "-",
+                              onDetailTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => HistoryPeminjamanDetailScreen(
+                                      data: docs[index],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 15),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-
-          const SizedBox(height: 20),
-
-          // ====================== LIST RIWAYAT ==========================
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _buildRiwayatCard("Aliando Setiawan"),
-                const SizedBox(height: 15),
-
-                _buildRiwayatCard("Dinarul"),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   // ===========================================================================
-  // CARD RIWAYAT
+  // CARD SESUAI UI GAMBAR
   // ===========================================================================
-  Widget _buildRiwayatCard(String nama) {
+  Widget _buildRiwayatCardUI({
+    required String nama,
+    required VoidCallback onDetailTap,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -655,13 +737,11 @@ final List<Map<String, String>> _daftarLab = [
           ),
 
           GestureDetector(
-            onTap: () {
-              // TODO: Arahkan ke halaman detail
-            },
+            onTap: onDetailTap,
             child: const Text(
               "Detail",
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 decoration: TextDecoration.underline,
                 color: Colors.black,
               ),
@@ -671,7 +751,7 @@ final List<Map<String, String>> _daftarLab = [
       ),
     );
   }
-
+  
   //===========================================================================
   // BOTTOM NAVIGATION BAR (CUSTOM - PIPIH & PRESISI TENGAH)
   // ===========================================================================
