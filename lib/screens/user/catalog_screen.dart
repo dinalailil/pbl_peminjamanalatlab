@@ -1,10 +1,12 @@
-// catalog_screen.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'detail_barang_modal.dart';
 
+
 class CatalogScreen extends StatefulWidget {
-  const CatalogScreen({Key? key}) : super(key: key);
+  final String? labName; // ★ menerima nama lab
+
+  const CatalogScreen({Key? key, this.labName}) : super(key: key);
 
   @override
   State<CatalogScreen> createState() => _CatalogScreenState();
@@ -14,16 +16,24 @@ class _CatalogScreenState extends State<CatalogScreen> {
   String selectedFilter = "Semua";
   String searchQuery = "";
 
-  Stream<QuerySnapshot> getFilteredStream() {
-    if (selectedFilter == "Semua") {
-      return FirebaseFirestore.instance.collection('alat').snapshots();
-    }
+  // ★ STREAM berdasarkan lab + filter
+Stream<QuerySnapshot> getFilteredStream() {
+  Query alatRef = FirebaseFirestore.instance.collection('alat');
 
-    return FirebaseFirestore.instance
-        .collection('alat')
-        .where('status', isEqualTo: selectedFilter)
-        .snapshots();
+  // ⭐ Filter berdasarkan LAB (kalau datang dari home/search)
+  if (widget.labName != null) {
+    alatRef = alatRef.where('lab', arrayContains: widget.labName);
   }
+
+  // ⭐ Filter status (tersedia / dipinjam)
+  if (selectedFilter != "Semua") {
+    alatRef = alatRef.where('status', isEqualTo: selectedFilter);
+  }
+
+  return alatRef.snapshots();
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,28 +58,42 @@ class _CatalogScreenState extends State<CatalogScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title + right back icon
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Katalog Barang",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    )
-                  ],
-                ),
+                // Title + Back Button
+              Padding(
+  padding: const EdgeInsets.only(top: 40, left: 16, right: 16),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      // Tombol back kiri
+      IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Navigator.pop(context),
+      ),
+
+      // Judul di tengah
+      const Expanded(
+        child: Center(
+          child: Text(
+            "Katalog Barang",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+
+      // Placeholder untuk menyeimbangkan layout
+      const SizedBox(width: 48),
+    ],
+  ),
+),
+
 
                 const SizedBox(height: 15),
 
-                // search
+                // Search Bar
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 3),
                   decoration: BoxDecoration(
@@ -92,48 +116,57 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                 const SizedBox(height: 15),
 
-                // filter chips
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FilterChip(
-                      label: const Text("Tersedia"),
-                      selected: selectedFilter == "Tersedia",
-                      onSelected: (_) {
-                        setState(() {
-                          selectedFilter = "Tersedia";
-                        });
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    FilterChip(
-                      label: const Text("Dipinjam"),
-                      selected: selectedFilter == "Dipinjam",
-                      onSelected: (_) {
-                        setState(() {
-                          selectedFilter = "Dipinjam";
-                        });
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    FilterChip(
-                      label: const Text("Semua"),
-                      selected: selectedFilter == "Semua",
-                      onSelected: (_) {
-                        setState(() {
-                          selectedFilter = "Semua";
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                // Filter Chips
+               // Filter Chips
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    // SEMUA
+    FilterChip(
+      label: const Text("Semua"),
+      selected: selectedFilter == "Semua",
+      onSelected: (_) {
+        setState(() {
+          selectedFilter = "Semua";
+        });
+      },
+    ),
+
+    const SizedBox(width: 10),
+
+    // TERSEDIA
+    FilterChip(
+      label: const Text("tersedia"),
+      selected: selectedFilter == "tersedia",
+      onSelected: (_) {
+        setState(() {
+          selectedFilter = "tersedia";
+        });
+      },
+    ),
+
+    const SizedBox(width: 10),
+
+    // DIPINJAM
+    FilterChip(
+      label: const Text("dipinjam"),
+      selected: selectedFilter == "dipinjam",
+      onSelected: (_) {
+        setState(() {
+          selectedFilter = "dipinjam";
+        });
+      },
+    ),
+  ],
+),
+
               ],
             ),
           ),
 
           const SizedBox(height: 15),
 
-          // list
+          // LIST GRID VIEW
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: getFilteredStream(),
@@ -144,6 +177,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                 var data = snapshot.data!.docs;
 
+                // Search filter
                 if (searchQuery.isNotEmpty) {
                   data = data
                       .where((item) =>
@@ -156,7 +190,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
                 if (data.isEmpty) {
                   return const Center(
-                    child: Text("Tidak ada barang", style: TextStyle(fontSize: 16)),
+                    child:
+                        Text("Tidak ada barang", style: TextStyle(fontSize: 16)),
                   );
                 }
 
@@ -176,16 +211,21 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     String nama = map['nama'] ?? "-";
                     String kode = map['kode'] ?? "-";
                     String status = map['status'] ?? "-";
-                    int jumlah = (map['jumlah'] is num) ? (map['jumlah'] as num).toInt() : 0;
+                    int jumlah = (map['jumlah'] is num)
+                        ? (map['jumlah'] as num).toInt()
+                        : 0;
                     String? gambar = map['gambar'];
 
                     return InkWell(
                       onTap: () {
-                        // Tampilkan modal detail (floating card)
-                        showDialog(
-                          context: context,
-                          builder: (_) => DetailBarangModal(data: item),
-                        );
+                       showDialog(
+  context: context,
+  builder: (_) => DetailBarangModal(
+    data: item,
+    labName: widget.labName, 
+  ),
+);
+
                       },
                       child: Container(
                         padding: const EdgeInsets.all(12),
@@ -205,30 +245,40 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             Expanded(
                               child: gambar != null
                                   ? Image.network(gambar, fit: BoxFit.contain)
-                                  : const Icon(Icons.image, size: 70, color: Colors.grey),
+                                  : const Icon(Icons.image,
+                                      size: 70, color: Colors.grey),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               nama,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14),
                             ),
-                            Text("Kode: $kode", style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                            Text("Kode: $kode",
+                                style: TextStyle(
+                                    color: Colors.grey.shade600, fontSize: 12)),
                             const SizedBox(height: 6),
-                            Text("Stok: $jumlah", style: TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w500)),
+                            Text("Stok: $jumlah",
+                                style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500)),
                             const SizedBox(height: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: status.toString().toLowerCase() == "tersedia"
-                                    ? Colors.green.shade100
-                                    : Colors.red.shade100,
+                                color:
+                                    status.toLowerCase() == "tersedia"
+                                        ? Colors.green.shade100
+                                        : Colors.red.shade100,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 status,
                                 style: TextStyle(
-                                  color: status.toString().toLowerCase() == "tersedia"
+                                  color: status.toLowerCase() == "tersedia"
                                       ? Colors.green.shade700
                                       : Colors.red.shade700,
                                   fontSize: 11,
