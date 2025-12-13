@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
 import 'daftar_permintaan_screen.dart';
 import 'history_peminjaman_screen.dart';
-import 'cek_ketersediaan_screen.dart';
+import 'detail_lab_admin_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -28,13 +28,26 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     {"name": "Mouse Wireless", "code": "Alt003", "image": "https://www.nicepng.com/png/detail/74-746964_hp-z5000-dark-ash-silver-wireless-mouse.png"},
   ];
 
-  // Data Dummy Lab
-  final List<String> _labList = [
-    "Lab AI Lt. 7B",
-    "Lab Jaringan Lt. 7B",
-    "Lab Multimedia Lt. 7B",
-    "Lab AI2 Lt. 7T",
+// --- BAGIAN INI WAJIB ADA AGAR lab['nama'] TIDAK MERAH ---
+final List<Map<String, String>> _daftarLab = [
+    {
+      "nama": "LAB AI Lt. 7B", 
+      "lokasi": "Lantai 7B"
+    },
+    {
+      "nama": "Lab AI2 Lt. 7B", // Sesuai data firestore anda
+      "lokasi": "Lantai 7T"
+    },
+    {
+      "nama": "Lab Jaringan Lt. 7B", 
+      "lokasi": "Lantai 7B"
+    },
+    {
+      "nama": "Lab Multimedia Lt. 7B", 
+      "lokasi": "Lantai 7B"
+    },
   ];
+  // ---------------------------------------------------------
 
   void _onItemTapped(int index) {
     setState(() {
@@ -268,7 +281,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               Icon(Icons.storage, color: Colors.black87),
               SizedBox(width: 10),
               Text(
-                "Cek Ketersediaan",
+                "Kelola Barang",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
@@ -277,65 +290,64 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
         const SizedBox(height: 10),
 
-        // LIST LABORATORIUM (Vertical)
-        ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _labList.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CekKetersediaanScreen(
-                      namaLab: _labList[index], // <-- KIRIM NAMA LAB
+// --- LIST LAB (FIXED) ---
+            ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _daftarLab.length, // Mengambil jumlah data dari variabel _daftarLab
+              itemBuilder: (context, index) {
+                final lab = _daftarLab[index]; // Mengambil data per item
+                
+                return GestureDetector(
+                  onTap: () {
+                    // NAVIGASI KE DETAIL LAB
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        // Mengirim nama lab ke halaman detail
+                        builder: (context) => DetailLabAdminScreen(namaLab: lab['nama']!),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 15),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: primaryColorStart.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.computer, color: primaryColorStart),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(lab['nama']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              const SizedBox(height: 4),
+                              Text(lab['lokasi']!, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.edit_note, color: primaryColorStart),
+                      ],
                     ),
                   ),
                 );
               },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.circle,
-                          size: 12,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 15),
-                        Text(
-                          _labList[index],
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                    const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 14,
-                      color: Colors.black87,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+            ),
+            
+            const SizedBox(height: 30),
       ],
     );
   }
