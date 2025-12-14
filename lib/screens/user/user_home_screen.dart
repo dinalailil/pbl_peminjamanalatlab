@@ -12,6 +12,7 @@ import 'notification_screen.dart';
 import 'edit_profile_screen.dart';
 import 'catalog_screen.dart';
 import 'pengembalian_screen.dart';
+import 'search_screen.dart';
 import '../../screens/auth/login_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
@@ -228,15 +229,13 @@ Future<String?> pilihLaboratorium(BuildContext context) async {
                   left: 20,
                   right: 20,
                   child: GestureDetector(
-                   onTap: () {
-  // Nanti isi untuk membuka halaman katalog
+                  onTap: () {
   Navigator.push(
     context,
-    MaterialPageRoute(
-      builder: (_) => CatalogScreen(labName: null), // tampilkan semua alat
-    ),
+    MaterialPageRoute(builder: (_) => const SearchScreen()),
   );
 },
+
 
                     child: Container(
                       height: 55,
