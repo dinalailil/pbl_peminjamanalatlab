@@ -4,12 +4,14 @@ import 'form_peminjaman_screen.dart';
 
 class DetailBarangModal extends StatelessWidget {
   final QueryDocumentSnapshot data;
-  final String? labName; // ⭐ TAMBAH PARAMETER
+  final String? labName;
+  final int stokVirtual; // ⭐ 1. TAMBAH PARAMETER STOK VIRTUAL
 
   const DetailBarangModal({
     Key? key,
     required this.data,
-    this.labName, // ⭐
+    this.labName,
+    required this.stokVirtual, // ⭐ WAJIB DIISI DARI KATALOG
   }) : super(key: key);
 
   @override
@@ -18,12 +20,12 @@ class DetailBarangModal extends StatelessWidget {
 
     String nama = map['nama'] ?? "-";
     String kode = map['kode'] ?? "-";
-    String status = map['status'] ?? "-";
-    int jumlah = (map['jumlah'] is num) ? (map['jumlah'] as num).toInt() : 0;
+    // String status = map['status'] ?? "-"; // Tidak dipakai lagi, pakai logika stokVirtual
+    // int jumlah = ... // Tidak kita pakai untuk validasi tombol lagi
     String deskripsi = map['deskripsi'] ?? "Tidak ada deskripsi";
     String? gambar = map['gambar'];
 
-    // ⭐ Ambil array lab
+    // Ambil array lab
     List labList = (map['lab'] is List) ? map['lab'] : [];
     String laboratorium = labList.isNotEmpty ? labList.join(", ") : "-";
 
@@ -53,6 +55,7 @@ class DetailBarangModal extends StatelessWidget {
                 // NAMA
                 Text(
                   nama,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -61,13 +64,17 @@ class DetailBarangModal extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // JUMLAH & KODE
+                // ⭐ 2. TAMPILKAN SISA STOK VIRTUAL (BUKAN FISIK)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Jumlah: $jumlah",
-                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                      "Sisa Stok: $stokVirtual", 
+                      style: TextStyle(
+                        fontSize: 14, 
+                        fontWeight: FontWeight.bold,
+                        color: stokVirtual > 0 ? Colors.black54 : Colors.red,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -79,7 +86,7 @@ class DetailBarangModal extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // LABORATURIUM
+                // LABORATORIUM
                 Text(
                   "Laboratorium: $laboratorium",
                   textAlign: TextAlign.center,
@@ -101,29 +108,36 @@ class DetailBarangModal extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // ⭐ TOMBOL SEWA HANYA KALAU labName ADA (berasal dari LAB)
+                // ⭐ 3. TOMBOL SEWA DENGAN LOGIKA STOK VIRTUAL
+                // (Hanya muncul jika ada labName / dari menu search lab)
                 if (labName != null)
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                     onPressed: jumlah == 0
-    ? null
-    : () {
-        Navigator.pop(context); // Tutup modal
+                      onPressed: stokVirtual <= 0 // Matikan jika stok virtual habis
+                          ? null
+                          : () {
+                              Navigator.pop(context); // Tutup modal
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FormPeminjamanScreen(
-              data: data,       // kirim data barang
-             
-            ),
-          ),
-        );
-      },
-
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FormPeminjamanScreen(
+                                    data: data, // kirim data barang
+                                  ),
+                                ),
+                              );
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xff4CAF50), // Hijau
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
                       child: Text(
-                        jumlah == 0 ? "Stok Habis" : "Sewa",
+                        stokVirtual <= 0 ? "Full Booked" : "Sewa",
+                        style: const TextStyle(
+                          color: Colors.white, 
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                     ),
                   ),
@@ -131,6 +145,7 @@ class DetailBarangModal extends StatelessWidget {
             ),
           ),
 
+          // TOMBOL CLOSE (X) DI POJOK
           Positioned(
             right: -10,
             top: -10,
