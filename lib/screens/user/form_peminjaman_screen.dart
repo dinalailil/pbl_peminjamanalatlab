@@ -44,10 +44,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     }
   }
 
-  // =============================
-  // SUBMIT DENGAN PENGECEKAN ANTRIAN
-  // =============================
-  Future<void> submit() async {
+Future<void> submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (tglPinjam == null || tglKembali == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lengkapi tanggal")));
@@ -71,11 +68,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
         DocumentSnapshot alatSnap = await tx.get(widget.data.reference);
         int stokFisik = (alatSnap['jumlah'] ?? 0) as int;
 
-        // 2. Hitung Berapa yang Sedang 'Diajukan' orang lain (Realtime Check)
-        // Query ini harus di luar transaction idealnya, tapi untuk simplicity kita cek snapshot langsung
-        // Karena transaction read harus document reference, kita pakai validasi UI 'stokBisaDipinjam' sebagai patokan utama,
-        // tapi di sini kita validasi hard limit stok fisik.
-        
+        // 2. Validasi Hard Limit Stok Fisik
         if (stokFisik < jumlahPinjam) { 
              throw Exception("Stok Gudang Habis!"); 
         }
@@ -83,15 +76,22 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
         // 3. Buat Request (Tanpa Kurangi Stok Fisik)
         tx.set(FirebaseFirestore.instance.collection("peminjaman").doc(), {
           "user_uid": FirebaseAuth.instance.currentUser!.uid,
+          
           "alat_id": widget.data.id,
           "kode_barang": widget.data['kode'],
           "nama_barang": widget.data['nama'],
           "gambar": widget.data['gambar'] ?? "",
+          
+          // ⭐ TAMBAHAN: AMBIL ARRAY LAB DARI DATA BARANG
+          "lab": widget.data['lab'] ?? [], 
+
           "nama_peminjam": namaController.text,
           "keperluan": keperluanController.text,
           "jumlah_pinjam": jumlahPinjam,
+          
           "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
           "tgl_kembali": Timestamp.fromDate(tglKembali!),
+          
           "status": "diajukan",
           "created_at": FieldValue.serverTimestamp(),
         });
@@ -104,6 +104,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e")));
     }
+    
     if (mounted) setState(() => loading = false);
   }
 

@@ -14,7 +14,7 @@ class NotificationScreen extends StatelessWidget {
       body: Column(
         children: [
           // =========================
-          // 🔵 HEADER UNGU
+          //  HEADER UNGU
           // =========================
           Container(
             width: double.infinity,
@@ -45,7 +45,7 @@ class NotificationScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // =========================
-          // 🔥 LIST STREAM NOTIFIKASI
+          //  LIST STREAM NOTIFIKASI
           // =========================
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -80,7 +80,7 @@ class NotificationScreen extends StatelessWidget {
                     print("GAMBAR VALUE: ${map["gambar"]} | TYPE: ${map["gambar"].runtimeType}");
 
                     // ===========================
-                    // 🔥 STATUS FILTER
+                    //  STATUS FILTER
                     // ===========================
                     String status = map["status"] ?? "-";
                     String statusText = "";
@@ -114,7 +114,7 @@ class NotificationScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           // ===========================
-                          // 📷 GAMBAR
+                          //  GAMBAR
                           // ===========================
                           Container(
   width: 70,
@@ -142,7 +142,7 @@ class NotificationScreen extends StatelessWidget {
                           
 
                           // ===========================
-                          // 📄 INFORMASI
+                          // INFORMASI
                           // ===========================
                           Expanded(
                             child: Column(
@@ -178,7 +178,7 @@ class NotificationScreen extends StatelessWidget {
                           ),
 
                           // ===========================
-                          // 🟩 BADGE STATUS
+                          // BADGE STATUS
                           // ===========================
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -210,7 +210,7 @@ class NotificationScreen extends StatelessWidget {
   }
 
   // ===============================
-  // 📅 FORMAT TANGGAL
+  // FORMAT TANGGAL
   // ===============================
   static String _format(Timestamp? t) {
     if (t == null) return "-";
