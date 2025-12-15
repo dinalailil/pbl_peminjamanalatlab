@@ -41,11 +41,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
       body: Column(
         children: [
           // ================= HEADER =================
-          Container(
+Container(
             padding: const EdgeInsets.fromLTRB(20, 70, 20, 30),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xff7f5eff), Color(0xff6b53ff)],
+                // Warna Gradien Ungu (Sama dengan SearchScreen)
+                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -162,7 +163,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     var data = item.data() as Map<String, dynamic>;
 
                     // ========================================================
-                    // 🔥 LOGIKA STOK VIRTUAL (NESTED STREAM)
+                    // LOGIKA STOK VIRTUAL (NESTED STREAM)
                     // ========================================================
                     // Kita buat stream lagi untuk mengecek apakah barang ini sedang di-booking orang lain
                     return StreamBuilder<QuerySnapshot>(

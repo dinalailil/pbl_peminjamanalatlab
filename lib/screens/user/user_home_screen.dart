@@ -358,7 +358,7 @@ Future<String?> pilihLaboratorium(BuildContext context) async {
           const SizedBox(height: 10),
 
           // =======================
-          // 🔥 LIST LAB FROM FIRESTORE
+          //  LIST LAB FROM FIRESTORE
           // =======================
           StreamBuilder<QuerySnapshot>(
             stream: getLabStream(),
@@ -454,7 +454,7 @@ Future<String?> pilihLaboratorium(BuildContext context) async {
         padding: const EdgeInsets.fromLTRB(20, 60, 20, 25),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xff7f5eff), Color(0xff6b53ff)],
+            colors:[Color(0xFF8E78FF), Color(0xFF764BA2)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -596,7 +596,7 @@ Container(
         ? Colors.greenAccent.shade100
         : status == "dipinjam"
             ? Colors.blueAccent.shade100
-            : Colors.redAccent.shade100,               // 👉 ditolak
+            : Colors.redAccent.shade100,               //  ditolak
     borderRadius: BorderRadius.circular(20),
   ),
   child: Text(
@@ -606,7 +606,7 @@ Container(
           ? Colors.green
           : status == "dipinjam"
               ? Colors.blue
-              : Colors.red,                            // 👉 ditolak
+              : Colors.red,                            //  ditolak
       fontWeight: FontWeight.bold,
       fontSize: 12,
     ),

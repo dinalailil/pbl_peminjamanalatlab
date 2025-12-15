@@ -14,14 +14,14 @@ class HistoryScreen extends StatelessWidget {
       body: Column(
         children: [
           // =========================
-          // 🔵 HEADER UNGU
+          //  HEADER UNGU
           // =========================
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 60, 20, 25),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xff7f5eff), Color(0xff6b53ff)],
+                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -53,7 +53,7 @@ class HistoryScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // =========================
-          // 🔥 LIST HISTORY
+          //  LIST HISTORY
           // =========================
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -158,7 +158,7 @@ class HistoryScreen extends StatelessWidget {
   }
 
   // ===========================
-  // 📅 FORMAT TANGGAL
+  //  FORMAT TANGGAL
   // ===========================
   static String _format(Timestamp t) {
     DateTime d = t.toDate();

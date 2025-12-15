@@ -5,13 +5,13 @@ import 'form_peminjaman_screen.dart';
 class DetailBarangModal extends StatelessWidget {
   final QueryDocumentSnapshot data;
   final String? labName;
-  final int stokVirtual; // ⭐ 1. TAMBAH PARAMETER STOK VIRTUAL
+  final int stokVirtual; //  1. TAMBAH PARAMETER STOK VIRTUAL
 
   const DetailBarangModal({
     Key? key,
     required this.data,
     this.labName,
-    required this.stokVirtual, // ⭐ WAJIB DIISI DARI KATALOG
+    required this.stokVirtual, //  WAJIB DIISI DARI KATALOG
   }) : super(key: key);
 
   @override
@@ -64,7 +64,7 @@ class DetailBarangModal extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // ⭐ 2. TAMPILKAN SISA STOK VIRTUAL (BUKAN FISIK)
+                //  2. TAMPILKAN SISA STOK VIRTUAL (BUKAN FISIK)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -93,7 +93,7 @@ class DetailBarangModal extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.deepPurple,
+                    color: Color.fromARGB(255, 220, 67, 241),
                   ),
                 ),
 
@@ -108,7 +108,7 @@ class DetailBarangModal extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // ⭐ 3. TOMBOL SEWA DENGAN LOGIKA STOK VIRTUAL
+                //  3. TOMBOL SEWA DENGAN LOGIKA STOK VIRTUAL
                 // (Hanya muncul jika ada labName / dari menu search lab)
                 if (labName != null)
                   SizedBox(
