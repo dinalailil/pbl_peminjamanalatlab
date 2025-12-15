@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async'; 
+
 import '../admin/admin_home_screen.dart';
 import '../user/user_home_screen.dart';
 import 'login_screen.dart';
+import 'onboarding_screen.dart'; 
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,16 +23,19 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkLoginStatus() async {
+    // Tahan 3 detik
     await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return; 
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
+      // Belum login -> Masuk ke Onboarding (White Theme)
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
       );
     } else {
+      // Sudah login -> Cek Role
       try {
         DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
@@ -62,51 +67,27 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF8E78FF), 
-              Color(0xFFDD2476), 
-            ],
-          ),
-        ),
-        child: Center( // Tambahkan Widget Center di sini untuk memastikan seluruh Column ada di tengah
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // --- LOGO BARU KAMU ---
-              Image.asset(
-                'images/lab.png', 
-                // PERBESAR UKURANNYA
-                width: 300, // Dulu 180, sekarang 280 (bisa disesuaikan lagi)
-                height: 300,
-              ),
-              
-              // HAPUS Saja Text "PEMLAB" yang Ganda, karena sudah ada di logomu
-              // const SizedBox(height: 20),
-              // const Text(
-              //   "PEMLAB",
-              //   style: TextStyle(
-              //     fontSize: 28, 
-              //     fontWeight: FontWeight.bold, 
-              //     color: Colors.white,
-              //     letterSpacing: 2,
-              //   ),
-              // ),
-              
-              const SizedBox(height: 40),
-              
-              // Loading Indicator Putih
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ],
-          ),
+      // 1. BACKGROUND PUTIH (Agar serasi dengan Onboarding)
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 2. LOGO
+            Image.asset(
+              'images/log.png', // Pastikan nama file ini benar (sesuai yang kamu pakai)
+              width: 300, 
+              height: 300,
+            ),
+            
+            const SizedBox(height: 40),
+            
+            // 3. LOADING INDICATOR UNGU
+            const CircularProgressIndicator(
+              // Menggunakan warna Ungu (0xFF6C63FF) agar sesuai tema
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
+            ),
+          ],
         ),
       ),
     );

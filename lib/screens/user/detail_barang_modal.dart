@@ -1,22 +1,33 @@
-// detail_barang_modal.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'form_peminjaman_modal.dart';
+import 'form_peminjaman_screen.dart';
 
 class DetailBarangModal extends StatelessWidget {
   final QueryDocumentSnapshot data;
+  final String? labName;
+  final int stokVirtual; // ⭐ 1. TAMBAH PARAMETER STOK VIRTUAL
 
-  const DetailBarangModal({Key? key, required this.data}) : super(key: key);
+  const DetailBarangModal({
+    Key? key,
+    required this.data,
+    this.labName,
+    required this.stokVirtual, // ⭐ WAJIB DIISI DARI KATALOG
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final map = data.data() as Map<String, dynamic>;
+
     String nama = map['nama'] ?? "-";
     String kode = map['kode'] ?? "-";
-    String status = map['status'] ?? "-";
-    int jumlah = (map['jumlah'] is num) ? (map['jumlah'] as num).toInt() : 0;
+    // String status = map['status'] ?? "-"; // Tidak dipakai lagi, pakai logika stokVirtual
+    // int jumlah = ... // Tidak kita pakai untuk validasi tombol lagi
     String deskripsi = map['deskripsi'] ?? "Tidak ada deskripsi";
     String? gambar = map['gambar'];
+
+    // Ambil array lab
+    List labList = (map['lab'] is List) ? map['lab'] : [];
+    String laboratorium = labList.isNotEmpty ? labList.join(", ") : "-";
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -24,7 +35,6 @@ class DetailBarangModal extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // white card
           Container(
             padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
             decoration: BoxDecoration(
@@ -34,47 +44,108 @@ class DetailBarangModal extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // GAMBAR
                 if (gambar != null)
                   Image.network(gambar, height: 140, fit: BoxFit.contain)
                 else
                   const Icon(Icons.image, size: 120),
+
                 const SizedBox(height: 12),
-                Text(nama, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+
+                // NAMA
+                Text(
+                  nama,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
                 const SizedBox(height: 8),
+
+                // ⭐ 2. TAMPILKAN SISA STOK VIRTUAL (BUKAN FISIK)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Jumlah : $jumlah", style: const TextStyle(fontSize: 13, color: Colors.black54)),
+                    Text(
+                      "Sisa Stok: $stokVirtual", 
+                      style: TextStyle(
+                        fontSize: 14, 
+                        fontWeight: FontWeight.bold,
+                        color: stokVirtual > 0 ? Colors.black54 : Colors.red,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Text("Kode : $kode", style: const TextStyle(fontSize: 13, color: Colors.black54)),
+                    Text(
+                      "Kode: $kode",
+                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Text(deskripsi, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: jumlah == 0
-                        ? null
-                        : () {
-                            Navigator.of(context).pop(); // tutup detail dialog
-                            // buka modal form peminjaman (bottom sheet)
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => FormPeminjamanModal(data: data),
-                            );
-                          },
-                    child: Text(jumlah == 0 ? "Stok Habis" : "Sewa"),
+
+                const SizedBox(height: 8),
+
+                // LABORATORIUM
+                Text(
+                  "Laboratorium: $laboratorium",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.deepPurple,
                   ),
                 ),
+
+                const SizedBox(height: 12),
+
+                // DESKRIPSI
+                Text(
+                  deskripsi,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 13),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ⭐ 3. TOMBOL SEWA DENGAN LOGIKA STOK VIRTUAL
+                // (Hanya muncul jika ada labName / dari menu search lab)
+                if (labName != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: stokVirtual <= 0 // Matikan jika stok virtual habis
+                          ? null
+                          : () {
+                              Navigator.pop(context); // Tutup modal
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FormPeminjamanScreen(
+                                    data: data, // kirim data barang
+                                  ),
+                                ),
+                              );
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xff4CAF50), // Hijau
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        stokVirtual <= 0 ? "Full Booked" : "Sewa",
+                        style: const TextStyle(
+                          color: Colors.white, 
+                          fontWeight: FontWeight.bold
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
 
-          // close button top-right
+          // TOMBOL CLOSE (X) DI POJOK
           Positioned(
             right: -10,
             top: -10,
