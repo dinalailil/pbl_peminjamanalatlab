@@ -45,10 +45,9 @@ class _HistoryPeminjamanScreenState extends State<HistoryPeminjamanScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 20),
 
-                // ================== SEARCH BAR DI HEADER ==================
+                // ================== SEARCH BAR ==================
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   decoration: BoxDecoration(
@@ -90,12 +89,10 @@ class _HistoryPeminjamanScreenState extends State<HistoryPeminjamanScreen> {
                   .where("status", isEqualTo: "selesai")
                   .snapshots(),
               builder: (context, snapshot) {
-                // Loading
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Jika Firestore kosong (belum ada data selesai)
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(
                     child: Text(
@@ -105,21 +102,22 @@ class _HistoryPeminjamanScreenState extends State<HistoryPeminjamanScreen> {
                   );
                 }
 
-                // Ambil seluruh data dari Firestore
-                List<DocumentSnapshot> data = snapshot.data!.docs;
+                // ================== GROUPING BY USER ==================
+                Map<String, List<DocumentSnapshot>> groupedUser = {};
 
-                // ================== FILTER LOCAL (SEARCH) ==================
-                List<DocumentSnapshot> filteredData = data.where((doc) {
-                  final pem = doc.data() as Map<String, dynamic>;
+                for (var doc in snapshot.data!.docs) {
+                  final data = doc.data() as Map<String, dynamic>;
                   final nama =
-                      (pem["nama_peminjam"] ?? pem["nama_user"] ?? "")
-                          .toString()
-                          .toLowerCase();
-                  return nama.contains(searchQuery);
-                }).toList();
+                      data["nama_peminjam"] ?? data["nama_user"] ?? "-";
 
-                // Jika hasil filter kosong, tampilkan pesan khusus search
-                if (filteredData.isEmpty) {
+                  // FILTER SEARCH
+                  if (!nama.toLowerCase().contains(searchQuery)) continue;
+
+                  groupedUser.putIfAbsent(nama, () => []);
+                  groupedUser[nama]!.add(doc);
+                }
+
+                if (groupedUser.isEmpty) {
                   return const Center(
                     child: Text(
                       "Data tidak ditemukan.",
@@ -128,26 +126,28 @@ class _HistoryPeminjamanScreenState extends State<HistoryPeminjamanScreen> {
                   );
                 }
 
+                final namaUserList = groupedUser.keys.toList();
+
                 return ListView.builder(
                   padding: const EdgeInsets.all(20),
-                  itemCount: filteredData.length,
+                  itemCount: namaUserList.length,
                   itemBuilder: (context, index) {
-                    final item = filteredData[index];
-                    final pem = item.data() as Map<String, dynamic>;
-
-                    String nama =
-                        pem["nama_peminjam"] ?? pem["nama_user"] ?? "-";
+                    final namaUser = namaUserList[index];
+                    final daftarRiwayat = groupedUser[namaUser]!;
 
                     return Column(
                       children: [
                         _buildPeminjamanCard(
-                          nama: nama,
+                          nama: namaUser,
                           onDetailTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    HistoryPeminjamanDetailScreen(data: item),
+                                    HistoryPeminjamanDetailScreen(
+                                  namaUser: namaUser,
+                                  daftarRiwayat: daftarRiwayat,
+                                ),
                               ),
                             );
                           },
@@ -165,7 +165,7 @@ class _HistoryPeminjamanScreenState extends State<HistoryPeminjamanScreen> {
     );
   }
 
-  // ================== CARD COMPONENT ==================
+  // ================== CARD ==================
   Widget _buildPeminjamanCard({
     required String nama,
     required VoidCallback onDetailTap,
