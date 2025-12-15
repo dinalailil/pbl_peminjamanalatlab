@@ -40,7 +40,7 @@ class _DetailPermintaanScreenState extends State<DetailPermintaanScreen> {
           // ================= OVERLAY SUCCESS =================
           if (showOverlay)
             Positioned(
-              top: 160, // di bawah header
+              top: 160,
               left: 0,
               right: 0,
               bottom: 0,
@@ -70,10 +70,18 @@ class _DetailPermintaanScreenState extends State<DetailPermintaanScreen> {
     );
   }
 
-  // ================= CONTENT =================
+  // ================= CONTENT (DIMODIFIKASI) =================
   Widget _mainContent(BuildContext context) {
+    // LOGIKA SAFE UNTUK FIELD LAB
+    String infoLab = '-';
+    if (pem['lab'] is List) {
+      infoLab = (pem['lab'] as List).join(', ');
+    } else if (pem['lab'] is String) {
+      infoLab = pem['lab'];
+    }
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(top: 30),
+      padding: const EdgeInsets.only(top: 30, bottom: 30),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 25),
         padding: const EdgeInsets.fromLTRB(20, 25, 20, 25),
@@ -89,10 +97,37 @@ class _DetailPermintaanScreenState extends State<DetailPermintaanScreen> {
 
             _rowInfo("Nama", pem['nama_peminjam'] ?? '-'),
             _rowInfo("Kode Alat", pem['kode_barang'] ?? '-'),
+            
+            // --- MODIFIKASI: MENAMPILKAN LAB ---
+            _rowInfo("Laboratorium", infoLab),
+            
             _rowInfo("Nama Barang", pem['nama_barang'] ?? '-'),
             _rowInfo("Jumlah", pem['jumlah_pinjam'].toString()),
             _rowInfo("Tgl Peminjaman", _format(pem['tgl_pinjam'])),
             _rowInfo("Tgl Pengembalian", _format(pem['tgl_kembali'])),
+
+            // --- MODIFIKASI: MENAMPILKAN KEPERLUAN ---
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.0),
+              child: Divider(thickness: 1, color: Colors.grey),
+            ),
+            
+            const Text(
+              "Keperluan :",
+              style: TextStyle(fontSize: 15, color: Colors.black54),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              (pem['keperluan'] ?? "").isEmpty ? 'Tidak ada keterangan' : pem['keperluan'],
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                fontStyle: FontStyle.italic,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.left,
+            ),
+            // ------------------------------------------
 
             const SizedBox(height: 30),
             _buildActionButtons(context),
@@ -139,6 +174,7 @@ class _DetailPermintaanScreenState extends State<DetailPermintaanScreen> {
 
   // ================= UPDATE STATUS =================
   Future<void> _updateStatus(BuildContext context, String newStatus) async {
+    // Update ke Firebase
     await FirebaseFirestore.instance
         .collection("peminjaman")
         .doc(widget.data.id)
@@ -146,6 +182,10 @@ class _DetailPermintaanScreenState extends State<DetailPermintaanScreen> {
       "status": newStatus,
       "updated_at": FieldValue.serverTimestamp(),
     });
+
+    // Opsional: Jika Anda ingin menambahkan logika pengurangan stok 
+    // seperti kode Anda sebelumnya, Anda bisa menambahkannya di sini.
+    // Namun untuk saat ini, saya biarkan sesuai versi Luthfi (hanya update status).
 
     if (!mounted) return;
 
@@ -188,7 +228,7 @@ class _DetailPermintaanScreenState extends State<DetailPermintaanScreen> {
     }
   }
 
-  // ================= UI HELPER =================
+  // ================= UI HELPER (DIMODIFIKASI AGAR TEXT TIDAK OVERFLOW) =================
   Widget _actionButton(String text, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -215,8 +255,15 @@ class _DetailPermintaanScreenState extends State<DetailPermintaanScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("$l :"),
-            Text(r, style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text("$l :", style: const TextStyle(fontSize: 15)),
+            const SizedBox(width: 10), // Spasi
+            Flexible( // Gunakan Flexible agar teks panjang turun ke bawah
+              child: Text(
+                r, 
+                textAlign: TextAlign.right,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)
+              ),
+            ),
           ],
         ),
       );

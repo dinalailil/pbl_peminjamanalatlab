@@ -23,7 +23,7 @@ class HistoryPeminjamanDetailScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF2F2F2),
       body: Column(
         children: [
-          // ====================== HEADER ======================
+          // ====================== HEADER (TETAP) ======================
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
@@ -76,14 +76,21 @@ class HistoryPeminjamanDetailScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // ====================== LIST RIWAYAT ======================
+          // ====================== LIST RIWAYAT (DIMODIFIKASI) ======================
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: daftarRiwayat.length,
               itemBuilder: (context, index) {
-                final d =
-                    daftarRiwayat[index].data() as Map<String, dynamic>;
+                final d = daftarRiwayat[index].data() as Map<String, dynamic>;
+
+                // LOGIKA SAFE UNTUK FIELD LAB
+                String infoLab = '-';
+                if (d['lab'] is List) {
+                  infoLab = (d['lab'] as List).join(', ');
+                } else if (d['lab'] is String) {
+                  infoLab = d['lab'];
+                }
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 18),
@@ -118,7 +125,7 @@ class HistoryPeminjamanDetailScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // KODE BARANG (JUDUL SESUAI UI)
+                            // KODE BARANG
                             Text(
                               d["kode_barang"] ?? "-",
                               style: const TextStyle(
@@ -129,18 +136,42 @@ class HistoryPeminjamanDetailScreen extends StatelessWidget {
 
                             const SizedBox(height: 8),
 
-                            _rowDetail(
-                                "Laboratorium", d["nama_lab"] ?? "-"),
-                            _rowDetail(
-                                "Nama Barang", d["nama_barang"] ?? "-"),
-                            _rowDetail(
-                                "Jumlah", d["jumlah_pinjam"] ?? "-"),
-                            _rowDetail(
-                                "Tgl Peminjaman",
-                                formatDate(d["tgl_pinjam"])),
-                            _rowDetail(
-                                "Tgl Pengembalian",
-                                formatDate(d["tgl_kembali"])),
+                            // --- MODIFIKASI: LAB DENGAN LOGIKA SAFE ---
+                            _rowDetail("Laboratorium", infoLab),
+                            
+                            _rowDetail("Nama Barang", d["nama_barang"] ?? "-"),
+                            _rowDetail("Jumlah", d["jumlah_pinjam"] ?? "-"),
+                            _rowDetail("Tgl Peminjaman", formatDate(d["tgl_pinjam"])),
+                            _rowDetail("Tgl Pengembalian", formatDate(d["tgl_kembali"])),
+                            
+                            // Tambahan Status agar lengkap
+                            _rowDetail("Status", d["status"] ?? "-"),
+
+                            // --- MODIFIKASI: KEPERLUAN DENGAN DIVIDER ---
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              child: Divider(thickness: 1, color: Colors.grey),
+                            ),
+                            
+                            const Text(
+                              "Keperluan :",
+                              style: TextStyle(
+                                fontSize: 13, 
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black54
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              (d["keperluan"] ?? "").isEmpty ? "Tidak ada keterangan" : d["keperluan"],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                                color: Colors.black87,
+                              ),
+                              textAlign: TextAlign.left,
+                            ),
+                            // ---------------------------------------------
                           ],
                         ),
                       ),
@@ -169,8 +200,8 @@ class HistoryPeminjamanDetailScreen extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(
-            width: 160,
+          // Menggunakan Flexible agar teks panjang tidak overflow ke kanan
+          Flexible(
             child: Text(
               value?.toString() ?? "-",
               textAlign: TextAlign.right,
