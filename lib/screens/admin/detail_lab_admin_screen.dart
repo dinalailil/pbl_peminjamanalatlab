@@ -221,82 +221,109 @@ class _DetailLabAdminScreenState extends State<DetailLabAdminScreen> {
     );
   }
 
-  // --- WIDGET LOGIKA STOK REALTIME ---
-  Widget _buildRealtimeStock(String namaBarang, int totalInventory) {
+// --- WIDGET LOGIKA STOK REALTIME (DENGAN BOOKING) ---
+  Widget _buildRealtimeStock(String namaBarang, int stokDatabase) {
     return StreamBuilder<QuerySnapshot>(
-      // Hanya ambil yang statusnya 'disetujui' (Barang sedang dipinjam)
+      // Kita ambil semua status peminjaman untuk barang ini
       stream: FirebaseFirestore.instance.collection('peminjaman')
           .where('nama_barang', isEqualTo: namaBarang)
-          .where('status', isEqualTo: 'disetujui')
           .snapshots(),
       builder: (c, s) {
-        int currentlyBorrowed = 0;
+        int bookingCount = 0; // Status: diajukan
+        int dipinjamCount = 0; // Status: disetujui
         
         if (s.hasData) {
-          // Hitung total item yang sedang dipinjam (sum field 'jumlah_pinjam')
           for (var doc in s.data!.docs) {
              var data = doc.data() as Map<String, dynamic>;
-             // Ambil jumlah_pinjam, default 1 jika field tidak ada
-             currentlyBorrowed += (data['jumlah_pinjam'] as num? ?? 1).toInt();
+             String status = data['status'] ?? '';
+             int qty = (data['jumlah_pinjam'] as num? ?? 1).toInt();
+
+             if (status == 'diajukan') {
+               bookingCount += qty;
+             } else if (status == 'disetujui') {
+               dipinjamCount += qty;
+             }
           }
         }
 
-        // Hitung Sisa di Rak (Stok Total - Sedang Dipinjam)
-        int availableOnShelf = totalInventory; // Karena logika kita stok database sudah dikurangi saat approve, maka 'jumlah' database adalah Available.
-        // TAPI: Jika logika 'prosesPeminjaman' kamu mengurangi stok di database 'alat', maka:
-        // Stok di DB = Stok Tersedia.
-        // Jadi kita tidak perlu pengurangan di sini.
-        // Variable 'totalInventory' adalah data['jumlah'] dari Firestore 'alat'.
-        
-        // Cek Logikamu:
-        // Jika User Pinjam -> Stok DB tetap.
-        // Jika Admin Terima -> Stok DB Berkurang (-1).
-        // BERARTI: Data di DB 'alat' adalah data "Stok Tersedia (Available)".
-        
-        int stokTersedia = totalInventory; 
+        // LOGIKA SOFT BOOKING:
+        // Stok Tersedia yang dilihat Admin = Stok Fisik di DB - Yang sedang di-booking
+        int displayTersedia = stokDatabase - bookingCount;
 
-        return Row(
+        return Column(
           children: [
-            // Badge Tersedia (Hijau)
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(
-                  color: stokTersedia > 0 ? const Color(0xFFE3FCEF) : const Color(0xFFFFF1F0), // Hijau muda / Merah muda
-                  borderRadius: BorderRadius.circular(8),
+            Row(
+              children: [
+                // 1. TERSEDIA (Hijau)
+                Expanded(
+                  child: _buildBadge(
+                    label: "Tersedia", 
+                    count: displayTersedia, 
+                    color: displayTersedia > 0 ? const Color(0xFF00B894) : Colors.red,
+                    bgColor: displayTersedia > 0 ? const Color(0xFFE3FCEF) : const Color(0xFFFFF1F0)
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    Text("Tersedia", style: TextStyle(fontSize: 10, color: stokTersedia > 0 ? const Color(0xFF00B894) : Colors.red)),
-                    const SizedBox(height: 2),
-                    Text("$stokTersedia", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: stokTersedia > 0 ? const Color(0xFF00B894) : Colors.red)),
-                  ],
+                
+                const SizedBox(width: 8),
+
+                // 2. BOOKING (Biru)
+                Expanded(
+                  child: _buildBadge(
+                    label: "Booking", 
+                    count: bookingCount, 
+                    color: Colors.blue, 
+                    bgColor: Colors.blue.shade50
+                  ),
                 ),
-              ),
+
+                const SizedBox(width: 8),
+
+                // 3. DIPINJAM (Ungu)
+                Expanded(
+                  child: _buildBadge(
+                    label: "Dipinjam", 
+                    count: dipinjamCount, 
+                    color: const Color(0xFF6C5CE7), 
+                    bgColor: const Color(0xFFF3E5F5)
+                  ),
+                ),
+              ],
             ),
             
-            const SizedBox(width: 8),
-
-            // Badge Dipinjam (Orange/Purple)
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3E5F5), // Ungu muda banget
-                  borderRadius: BorderRadius.circular(8),
+            // Peringatan jika minus (Barang over-booked sebelum sistem ini ada)
+            if (displayTersedia < 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text(
+                  "⚠️ Over-booking! Stok kurang ${displayTersedia.abs()}",
+                  style: const TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
-                child: Column(
-                  children: [
-                    Text("Dipinjam", style: TextStyle(fontSize: 10, color: primaryColorEnd)),
-                    const SizedBox(height: 2),
-                    Text("$currentlyBorrowed", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: primaryColorEnd)),
-                  ],
-                ),
-              ),
-            ),
+              )
           ],
         );
       }
+    );
+  }
+
+  // Helper kecil biar kodingan rapi
+  Widget _buildBadge({required String label, required int count, required Color color, required Color bgColor}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+          const SizedBox(height: 2),
+          Text(
+            "$count", 
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)
+          ),
+        ],
+      ),
     );
   }
 }

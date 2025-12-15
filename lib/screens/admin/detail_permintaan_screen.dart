@@ -88,17 +88,19 @@ class DetailPermintaanScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                _rowInfo("Nama", pem['nama_peminjam']),
-                _rowInfo("Kode Alat", pem['kode_barang']),
-                _rowInfo("Laboratorium", pem['nama_barang']),
-                _rowInfo("Jumlah", pem['jumlah_pinjam'].toString()),
-                _rowInfo("Tgl Peminjaman", formatTanggal(pem['tgl_pinjam'])),
-                _rowInfo("Tgl Pengembalian", formatTanggal(pem['tgl_kembali'])),
+                _rowInfo("Nama", pem['nama_peminjam'] ?? '-'),
+                _rowInfo("Kode Alat", pem['kode_barang'] ?? '-'),
+                _rowInfo("Laboratorium", pem['nama_barang'] ?? '-'),
+                _rowInfo("Jumlah", (pem['jumlah_pinjam'] ?? 1).toString()),
+                // Handle jika field tanggal null/error
+                _rowInfo("Tgl Peminjaman", pem['tgl_pinjam'] != null ? formatTanggal(pem['tgl_pinjam']) : '-'),
+                _rowInfo("Tgl Pengembalian", pem['tgl_kembali'] != null ? formatTanggal(pem['tgl_kembali']) : '-'),
 
                 const SizedBox(height: 25),
 
                 // ================= BUTTON DINAMIS =================
-                _buildActionButtons(context, pem['status']),
+                // Saya tambahkan parameter 'pem' agar fungsi updateStatus bisa baca data
+                _buildActionButtons(context, pem['status'], pem),
               ],
             ),
           )
@@ -131,14 +133,14 @@ class DetailPermintaanScreen extends StatelessWidget {
   }
 
   // ================= TOMBOL DINAMIS SESUAI STATUS =================
-  Widget _buildActionButtons(BuildContext context, String status) {
-  // ==== STATUS DIAJUKAN ====
+  Widget _buildActionButtons(BuildContext context, String status, Map<String, dynamic> pemData) {
+    // ==== STATUS DIAJUKAN ====
     if (status == "diajukan") {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           GestureDetector(
-            onTap: () => updateStatus(context, "disetujui"),
+            onTap: () => updateStatus(context, "disetujui", pemData), // Pass pemData
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 12),
               decoration: BoxDecoration(
@@ -153,7 +155,7 @@ class DetailPermintaanScreen extends StatelessWidget {
           ),
 
           GestureDetector(
-            onTap: () => updateStatus(context, "ditolak"),
+            onTap: () => updateStatus(context, "ditolak", pemData), // Pass pemData
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 12),
               decoration: BoxDecoration(
@@ -174,7 +176,7 @@ class DetailPermintaanScreen extends StatelessWidget {
     if (status == "disetujui") {
       return Center(
         child: GestureDetector(
-          onTap: () => updateStatus(context, "selesai"),
+          onTap: () => updateStatus(context, "selesai", pemData), // Pass pemData
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
             decoration: BoxDecoration(
@@ -206,31 +208,106 @@ class DetailPermintaanScreen extends StatelessWidget {
 
     // ==== STATUS SELESAI ====
     if (status == "selesai") {
-      // Tidak menampilkan apa pun
-      return const SizedBox();
+      return const Center(
+        child: Text(
+          "Peminjaman Selesai",
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
     }
 
     return const SizedBox();
   }
 
-  // ================= UPDATE STATUS DATABASE =================
-  Future<void> updateStatus(BuildContext context, String status) async {
+  // =========================================================================
+  // LOGIKA UPDATE STATUS DATABASE (MODIFIED)
+  // =========================================================================
+  Future<void> updateStatus(BuildContext context, String newStatus, Map<String, dynamic> pemData) async {
     try {
-      await FirebaseFirestore.instance.collection("peminjaman").doc(data.id).update({
-        "status": status,
-        "updated_at": FieldValue.serverTimestamp(),
-      });
+      // 1. Ambil Info Barang dari Database 'alat' untuk cek Stok
+      // Kita cari berdasarkan 'kode_barang' yang ada di data peminjaman
+      var alatQuery = await FirebaseFirestore.instance
+          .collection('alat')
+          .where('kode', isEqualTo: pemData['kode_barang'])
+          .limit(1)
+          .get();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Status diperbarui menjadi: $status")),
-      );
+      if (alatQuery.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data alat tidak ditemukan di gudang!")));
+        return;
+      }
 
-      Navigator.pop(context);
+      var alatDoc = alatQuery.docs.first;
+      int stokGudang = (alatDoc['jumlah'] as num).toInt();
+      int jumlahPinjam = (pemData['jumlah_pinjam'] as num? ?? 1).toInt();
+
+      // 2. LOGIKA PERUBAHAN STOK
+      if (newStatus == 'disetujui') {
+        // Cek Stok Cukup Gak?
+        if (stokGudang >= jumlahPinjam) {
+          // KURANGI STOK
+          await alatDoc.reference.update({
+            'jumlah': stokGudang - jumlahPinjam
+          });
+          
+          // Update Status Peminjaman
+          await FirebaseFirestore.instance.collection("peminjaman").doc(data.id).update({
+            "status": newStatus,
+            "updated_at": FieldValue.serverTimestamp(),
+          });
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Disetujui. Stok alat berkurang."), backgroundColor: Colors.green));
+            Navigator.pop(context);
+          }
+        } else {
+          // Stok Kurang
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: Stok sisa $stokGudang, diminta $jumlahPinjam"), backgroundColor: Colors.red));
+          }
+          return; // Jangan update status
+        }
+
+      } else if (newStatus == 'selesai') {
+        // BARANG KEMBALI -> TAMBAH STOK
+        await alatDoc.reference.update({
+          'jumlah': stokGudang + jumlahPinjam
+        });
+
+        // Update Status Peminjaman
+        await FirebaseFirestore.instance.collection("peminjaman").doc(data.id).update({
+          "status": newStatus,
+          "updated_at": FieldValue.serverTimestamp(),
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Selesai. Stok alat dikembalikan."), backgroundColor: Colors.blue));
+          Navigator.pop(context);
+        }
+
+      } else {
+        // KASUS DITOLAK (Stok Tidak Berubah)
+        await FirebaseFirestore.instance.collection("peminjaman").doc(data.id).update({
+          "status": newStatus,
+          "updated_at": FieldValue.serverTimestamp(),
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Status diperbarui menjadi: $newStatus")));
+          Navigator.pop(context);
+        }
+      }
 
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal memperbarui: $e")),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memperbarui: $e")),
+        );
+      }
     }
   }
 
