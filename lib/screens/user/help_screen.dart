@@ -42,7 +42,7 @@ class HelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Abu-abu sangat terang
+      backgroundColor: const Color(0xFFF8F9FA), 
       body: Column(
         children: [
           // --- HEADER MODERN (Gradient Ungu) ---
@@ -51,7 +51,7 @@ class HelpScreen extends StatelessWidget {
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)], // Warna Tema Labify
+                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -61,22 +61,30 @@ class HelpScreen extends StatelessWidget {
               ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // UBAH 1: CrossAxisAlignment jadi center agar teks di tengah
+              crossAxisAlignment: CrossAxisAlignment.center, 
               children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
+                // UBAH 2: Bungkus tombol kembali dengan Align agar tetap di kiri
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_back, color: Colors.white),
                     ),
-                    child: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
                 ),
-                const SizedBox(height: 20),
+                
+                const SizedBox(height: 10), // Jarak disesuaikan sedikit
+                
                 const Text(
                   "Pusat Bantuan",
+                  textAlign: TextAlign.center, // Pastikan align text center
                   style: TextStyle(
                     color: Colors.white, 
                     fontSize: 26, 
@@ -87,13 +95,14 @@ class HelpScreen extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   "Temukan jawaban atas masalahmu disini",
+                  textAlign: TextAlign.center, // Pastikan align text center
                   style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
                 ),
               ],
             ),
           ),
 
-          // --- LIST FAQ ---
+          // --- LIST FAQ (TIDAK BERUBAH) ---
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(20),
@@ -113,7 +122,7 @@ class HelpScreen extends StatelessWidget {
   }
 }
 
-// Widget Item FAQ Kustom
+// Widget Item FAQ Kustom (TIDAK BERUBAH)
 class _ModernFaqTile extends StatelessWidget {
   final String question;
   final String answer;
@@ -141,16 +150,14 @@ class _ModernFaqTile extends StatelessWidget {
         ],
       ),
       child: Theme(
-        // Menghilangkan garis border bawaan ExpansionTile
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           childrenPadding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-          // Ikon di kiri (Nomor atau Ikon Tanya)
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF8E78FF).withOpacity(0.1), // Ungu Pudar
+              color: const Color(0xFF8E78FF).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.question_answer_rounded, color: Color(0xFF764BA2), size: 20),
@@ -163,10 +170,8 @@ class _ModernFaqTile extends StatelessWidget {
               color: Colors.black87,
             ),
           ),
-          // Ikon panah kustom
           trailing: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
           children: [
-            // Garis pemisah halus
             Divider(color: Colors.grey.withOpacity(0.1), height: 1),
             const SizedBox(height: 15),
             Text(
@@ -179,7 +184,7 @@ class _ModernFaqTile extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
+     ),
+);
+}
 }
