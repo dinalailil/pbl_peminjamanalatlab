@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'detail_peminjaman_screen.dart';
 
 class HistoryPeminjamanScreen extends StatelessWidget {
   const HistoryPeminjamanScreen({super.key});
@@ -6,21 +7,18 @@ class HistoryPeminjamanScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F6F6),
+      backgroundColor: const Color(0xFFFFD2D2),
       body: Column(
         children: [
-          // ================== HEADER ==================
+          // HEADER
           Container(
             width: double.infinity,
             height: 180,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
+                colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8E78FF),
-                  Color(0xFF764BA2),
-                ],
               ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(40),
@@ -29,63 +27,64 @@ class HistoryPeminjamanScreen extends StatelessWidget {
             ),
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back_ios,
-                              color: Colors.white),
-                        ),
-                      ],
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
-                      "History\nPeminjaman",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                    const Center(
+                      child: Text(
+                        "History",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 15),
+
+                    // SEARCH BAR
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.search, size: 20, color: Colors.grey),
+                          SizedBox(width: 10),
+                          Text(
+                            "Search",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
                   ],
                 ),
               ),
             ),
           ),
 
-          // ================== LIST ==================
+          // LIST NAMA PEMINJAM
           Expanded(
-            child: ListView(
+            child: Padding(
               padding: const EdgeInsets.all(20),
-              children: [
-                _buildPeminjamanCard(
-                  avatarColor: Colors.blue.shade300,
-                  kode: "",
-                  tanggal: "",
-                  withText: false,
-                ),
-
-                const SizedBox(height: 20),
-
-                _buildPeminjamanCard(
-                  avatarColor: Colors.red.shade300,
-                  kode: "Kode Alt002",
-                  tanggal: "26 Okt 2025 - 27 Okt 2025",
-                ),
-
-                const SizedBox(height: 20),
-
-                _buildPeminjamanCard(
-                  avatarColor: Colors.orange.shade300,
-                  kode: "Kode Alt001",
-                  tanggal: "01 Sept 2025 - 02 Okt 2025",
-                ),
-              ],
+              child: Column(
+                children: [
+                  _peminjamCard(
+                    context,
+                    nama: "Aliando Setiawan",
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -93,70 +92,45 @@ class HistoryPeminjamanScreen extends StatelessWidget {
     );
   }
 
-  // ================== CARD COMPONENT ==================
-  Widget _buildPeminjamanCard({
-    required Color avatarColor,
-    required String kode,
-    required String tanggal,
-    bool withText = true,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          // Avatar
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: avatarColor,
-            child: const Icon(Icons.person, color: Colors.white, size: 32),
+  Widget _peminjamCard(BuildContext context, {required String nama}) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetailPeminjamanScreen(
+              nama: nama,
+            ),
           ),
-
-          const SizedBox(width: 16),
-
-          // Keterangan
-          Expanded(
-            child: withText
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        kode,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        tanggal,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54),
-                      )
-                    ],
-                  )
-                : const SizedBox(),
-          ),
-
-          // Lihat Detail
-          if (withText)
-            const Text(
-              "Lihat Detail",
-              style: TextStyle(
-                fontSize: 12,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 25,
+              backgroundImage: AssetImage("assets/profile.png"),
+            ),
+            const SizedBox(width: 15),
+            Text(
+              nama,
+              style: const TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
               ),
             ),
-        ],
+            const Spacer(),
+            const Text(
+              "Lihat Detail",
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }

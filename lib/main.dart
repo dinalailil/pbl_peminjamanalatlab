@@ -2,19 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
-// Import semua file yang dibutuhkan
+import 'firebase_options.dart'; // <<< WAJIB ADA
+
 import 'providers/auth_provider.dart';
-import 'screens/auth/login_screen.dart'; // Hanya Login Screen
+import 'screens/auth/login_screen.dart';
 import 'screens/user/user_home_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
 import 'screens/auth/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  // WAJIB untuk Web
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -29,13 +34,10 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Aplikasi Peminjaman',
         theme: ThemeData(
-          primarySwatch: Colors.green, // Ganti tema jadi hijau
-          useMaterial3: false, 
+          primarySwatch: Colors.green,
+          useMaterial3: false,
         ),
-        // Halaman pertama splash screen
         home: const SplashScreen(),
-        
-        // Daftar Rute (Register HILANG)
         routes: {
           '/login': (context) => const LoginScreen(),
           '/user-dashboard': (context) => const UserHomeScreen(),
