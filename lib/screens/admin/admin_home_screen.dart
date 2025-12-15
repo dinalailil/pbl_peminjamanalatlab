@@ -62,7 +62,7 @@ final List<Map<String, String>> _daftarLab = [
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       _buildHomeBeranda(),
-      _buildPermintaanTab(),
+      _buildPermintaanTab(context),
       _buildRiwayatTab(),
     ];
 
@@ -356,107 +356,118 @@ final List<Map<String, String>> _daftarLab = [
   }
 
   // ===========================================================================
-  // TAB 2: PEMINJAMAN
+  // TAB 2: DAFTAR PERMINTAAN
   // ===========================================================================
-  Widget _buildPermintaanTab() {
-    return Scaffold(
-      backgroundColor: scaffoldBgColor,
-      body: Column(
-        children: [
-          // ====================== HEADER UNGU ==========================
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [primaryColorStart, primaryColorEnd],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
-              ),
+  Widget _buildPermintaanTab(BuildContext context) {
+    return Column(
+      children: [
+        // ====================== HEADER UNGU ==========================
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [primaryColorStart, primaryColorEnd],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: const Column(
-              children: [
-                Text(
-                  "Daftar Permintaan",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(40),
+              bottomRight: Radius.circular(40),
             ),
           ),
+          child: const Text(
+            "Daftar Permintaan",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
 
-          const SizedBox(height: 20),
+        const SizedBox(height: 20),
 
-          // ====================== LIST FIRESTORE ==========================
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection("peminjaman")
-                  .orderBy("created_at", descending: true)
-                  .snapshots(),
+        // ====================== LIST FIRESTORE ==========================
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection("peminjaman")
+                .where("status", whereIn: ["diajukan", "disetujui"])
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text("Belum ada permintaan peminjaman"),
-                  );
-                }
-
-                final docs = snapshot.data!.docs;
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final d = docs[index].data() as Map<String, dynamic>;
-
-                    return Column(
-                      children: [
-                        _buildPermintaanCard(
-                          status: d["status"] ?? "Menunggu",
-                          kode: d["kode_barang"] ?? "-",
-                          ruang: d["nama_barang"] ?? "-",
-                          showStatus: d["status"] == "proses",
-                          onDetailTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DetailPermintaanScreen(
-                                  data: docs[index],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 15),
-                      ],
-                    );
-                  },
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(
+                  child: Text("Belum ada permintaan peminjaman"),
                 );
-              },
-            ),
+              }
+
+              final docs = snapshot.data!.docs;
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final status = data['status'] ?? 'diajukan';
+
+                  return Column(
+                    children: [
+                      _buildPermintaanCard(
+                        status: _getStatusText(status),
+                        kode: data["kode_barang"] ?? "-",
+                        namalab: data["nama_lab"] ?? "-",
+                        showStatus: status == "disetujui", // ✔ LOGIKA BENAR
+                        onDetailTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetailPermintaanScreen(
+                                data: docs[index],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                    ],
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
+  // ====================== STATUS TEXT ======================
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'diajukan':
+        return 'Menunggu Persetujuan';
+      case 'disetujui':
+        return 'Menunggu Persetujuan';
+      case 'ditolak':
+        return 'Ditolak';
+      case 'selesai':
+        return 'Selesai';
+      default:
+        return 'Menunggu Persetujuan';
+    }
+  }
+
+  // ====================== CARD ======================
   Widget _buildPermintaanCard({
     required String status,
     required String kode,
-    required String ruang,
-    bool showStatus = false,
+    required String namalab,
+    required bool showStatus,
     required VoidCallback onDetailTap,
   }) {
     return Container(
@@ -497,12 +508,15 @@ final List<Map<String, String>> _daftarLab = [
                       ),
                     ),
 
+                    // ✔ Badge hanya untuk status "disetujui"
                     if (showStatus)
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.greenAccent.shade400,
+                          color: Colors.green,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
@@ -528,7 +542,7 @@ final List<Map<String, String>> _daftarLab = [
                 ),
 
                 Text(
-                  "Ruang : $ruang",
+                  "Ruang : $namalab",
                   style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black87,
@@ -557,7 +571,7 @@ final List<Map<String, String>> _daftarLab = [
   }
 
   // ===========================================================================
-  // TAB 3: RIWAYAT PEMINJAMAN (Admin) – Tampilan seperti User + Search Bar
+  // TAB 3: RIWAYAT PEMINJAMAN (GROUP BY USER)
   // ===========================================================================
   Widget _buildRiwayatTab() {
     TextEditingController searchController = TextEditingController();
@@ -594,10 +608,9 @@ final List<Map<String, String>> _daftarLab = [
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 20),
 
-                    // ================== SEARCH BAR DI HEADER ==================
+                    // ================== SEARCH ==================
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 15),
                       decoration: BoxDecoration(
@@ -614,9 +627,7 @@ final List<Map<String, String>> _daftarLab = [
                       child: TextField(
                         controller: searchController,
                         onChanged: (value) {
-                          setState(() {
-                            searchQuery = value.toLowerCase();
-                          });
+                          setState(() => searchQuery = value.toLowerCase());
                         },
                         decoration: const InputDecoration(
                           hintText: "Search",
@@ -628,17 +639,16 @@ final List<Map<String, String>> _daftarLab = [
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 10),
 
-              // ====================== FIRESTORE LIST ==========================
+              // ====================== LIST RIWAYAT ======================
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection("peminjaman")
                       .where("status", isEqualTo: "selesai")
                       .snapshots(),
-
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -650,41 +660,59 @@ final List<Map<String, String>> _daftarLab = [
                       );
                     }
 
-                    List docs = snapshot.data!.docs;
+                    // ================== GROUP BY USER ==================
+                    Map<String, List<DocumentSnapshot>> grouped = {};
 
-                    // ========== FILTER LOCAL BERDASARKAN SEARCH ==========
-                    if (searchQuery.isNotEmpty) {
-                      docs = docs.where((doc) {
-                        final d = doc.data() as Map<String, dynamic>;
+                    for (var doc in snapshot.data!.docs) {
+                      final d = doc.data() as Map<String, dynamic>;
+                      final nama = (d["nama_peminjam"] ?? "-").toString();
 
-                        String nama = (d["nama_peminjam"] ?? "").toLowerCase();
-                        String kode = (d["kode_barang"] ?? "").toLowerCase();
-
-                        return nama.contains(searchQuery) ||
-                            kode.contains(searchQuery);
-                      }).toList();
+                      grouped.putIfAbsent(nama, () => []);
+                      grouped[nama]!.add(doc);
                     }
 
-                    if (docs.isEmpty) {
+                    // ================== FILTER SEARCH ==================
+                    List<MapEntry<String, List<DocumentSnapshot>>> result =
+                        grouped.entries.where((entry) {
+                      final namaUser = entry.key.toLowerCase();
+
+                      if (searchQuery.isEmpty) return true;
+
+                      // search by nama user atau kode barang di dalam riwayat
+                      return namaUser.contains(searchQuery) ||
+                          entry.value.any((doc) {
+                            final d = doc.data() as Map<String, dynamic>;
+                            return (d["kode_barang"] ?? "")
+                                .toString()
+                                .toLowerCase()
+                                .contains(searchQuery);
+                          });
+                    }).toList();
+
+                    if (result.isEmpty) {
                       return const Center(child: Text("Data tidak ditemukan."));
                     }
 
+                    // ================== LIST UI ==================
                     return ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: docs.length,
+                      itemCount: result.length,
                       itemBuilder: (context, index) {
-                        final d = docs[index].data() as Map<String, dynamic>;
+                        final namaUser = result[index].key;
+                        final daftarRiwayat = result[index].value;
 
                         return Column(
                           children: [
                             _buildRiwayatCardUI(
-                              nama: d["nama_peminjam"] ?? "-",
+                              nama: namaUser,
                               onDetailTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => HistoryPeminjamanDetailScreen(
-                                      data: docs[index],
+                                    builder: (_) =>
+                                        HistoryPeminjamanDetailScreen(
+                                      namaUser: namaUser,
+                                      daftarRiwayat: daftarRiwayat,
                                     ),
                                   ),
                                 );

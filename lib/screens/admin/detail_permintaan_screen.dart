@@ -1,221 +1,135 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class DetailPermintaanScreen extends StatelessWidget {
+class DetailPermintaanScreen extends StatefulWidget {
   final QueryDocumentSnapshot data;
 
   const DetailPermintaanScreen({super.key, required this.data});
 
   @override
-  Widget build(BuildContext context) {
-    final pem = data.data() as Map<String, dynamic>;
+  State<DetailPermintaanScreen> createState() =>
+      _DetailPermintaanScreenState();
+}
 
+class _DetailPermintaanScreenState extends State<DetailPermintaanScreen> {
+  late Map<String, dynamic> pem;
+
+  bool showOverlay = false;
+  bool showCheck = false;
+
+  @override
+  void initState() {
+    super.initState();
+    pem = widget.data.data() as Map<String, dynamic>;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F6F6),
-
-      body: Column(
+      body: Stack(
         children: [
-          // ================= HEADER =================
-          Stack(
+          // ================= MAIN CONTENT =================
+          Column(
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF8E78FF),
-                      Color(0xFF764BA2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                ),
-                child: const Text(
-                  "Detail\nPermintaan",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-              Positioned(
-                top: 50,
-                left: 10,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
+              _buildHeader(context),
+              Expanded(child: _mainContent(context)),
             ],
           ),
 
-          const SizedBox(height: 30),
-
-          // ================= CARD DETAIL =================
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 25),
-            padding: const EdgeInsets.fromLTRB(20, 25, 20, 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26.withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Konfirmasi Peminjaman",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+          // ================= OVERLAY SUCCESS =================
+          if (showOverlay)
+            Positioned(
+              top: 160, // di bawah header
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                color: Colors.white,
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    child: showCheck
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 120,
+                          )
+                        : const SizedBox(
+                            width: 80,
+                            height: 80,
+                            child:
+                                CircularProgressIndicator(strokeWidth: 6),
+                          ),
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                _rowInfo("Nama", pem['nama_peminjam'] ?? '-'),
-                _rowInfo("Kode Alat", pem['kode_barang'] ?? '-'),
-                _rowInfo("Laboratorium", pem['nama_barang'] ?? '-'),
-                _rowInfo("Jumlah", (pem['jumlah_pinjam'] ?? 1).toString()),
-                // Handle jika field tanggal null/error
-                _rowInfo("Tgl Peminjaman", pem['tgl_pinjam'] != null ? formatTanggal(pem['tgl_pinjam']) : '-'),
-                _rowInfo("Tgl Pengembalian", pem['tgl_kembali'] != null ? formatTanggal(pem['tgl_kembali']) : '-'),
-
-                const SizedBox(height: 25),
-
-                // ================= BUTTON DINAMIS =================
-                // Saya tambahkan parameter 'pem' agar fungsi updateStatus bisa baca data
-                _buildActionButtons(context, pem['status'], pem),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  // ================= ROW INFO =================
-  Widget _rowInfo(String left, String right) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text("$left :", style: const TextStyle(fontSize: 15)),
-          Flexible(
-            child: Text(
-              right,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  // ================= TOMBOL DINAMIS SESUAI STATUS =================
-  Widget _buildActionButtons(BuildContext context, String status, Map<String, dynamic> pemData) {
-    // ==== STATUS DIAJUKAN ====
-    if (status == "diajukan") {
+  // ================= CONTENT =================
+  Widget _mainContent(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: 30),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 25),
+        padding: const EdgeInsets.fromLTRB(20, 25, 20, 25),
+        decoration: _cardDecoration(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Konfirmasi Peminjaman",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 20),
+
+            _rowInfo("Nama", pem['nama_peminjam'] ?? '-'),
+            _rowInfo("Kode Alat", pem['kode_barang'] ?? '-'),
+            _rowInfo("Nama Barang", pem['nama_barang'] ?? '-'),
+            _rowInfo("Jumlah", pem['jumlah_pinjam'].toString()),
+            _rowInfo("Tgl Peminjaman", _format(pem['tgl_pinjam'])),
+            _rowInfo("Tgl Pengembalian", _format(pem['tgl_kembali'])),
+
+            const SizedBox(height: 30),
+            _buildActionButtons(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= ACTION BUTTON =================
+  Widget _buildActionButtons(BuildContext context) {
+    final status = pem['status'];
+
+    if (status == 'diajukan') {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          GestureDetector(
-            onTap: () => updateStatus(context, "disetujui", pemData), // Pass pemData
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: const Text(
-                "Ya",
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
+          _actionButton(
+            "Iya",
+            Colors.green,
+            () => _updateStatus(context, 'disetujui'),
           ),
-
-          GestureDetector(
-            onTap: () => updateStatus(context, "ditolak", pemData), // Pass pemData
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: const Text(
-                "Tidak",
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
+          _actionButton(
+            "Tidak",
+            Colors.red,
+            () => _updateStatus(context, 'ditolak'),
           ),
         ],
       );
     }
 
-    // ==== STATUS DISETUJUI ====
-    if (status == "disetujui") {
+    if (status == 'disetujui') {
       return Center(
-        child: GestureDetector(
-          onTap: () => updateStatus(context, "selesai", pemData), // Pass pemData
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF764BA2),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: const Text(
-              "Konfirmasi Pengembalian",
-              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // ==== STATUS DITOLAK ====
-    if (status == "ditolak") {
-      return const Center(
-        child: Text(
-          "Pengajuan telah ditolak",
-          style: TextStyle(
-            fontSize: 16,
-            color: Color.fromARGB(255, 243, 6, 6),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    }
-
-    // ==== STATUS SELESAI ====
-    if (status == "selesai") {
-      return const Center(
-        child: Text(
-          "Peminjaman Selesai",
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.green,
-            fontWeight: FontWeight.bold,
-          ),
+        child: _actionButton(
+          "Konfirmasi Pengembalian",
+          const Color(0xFF764BA2),
+          () => _updateStatus(context, 'selesai'),
         ),
       );
     }
@@ -223,112 +137,139 @@ class DetailPermintaanScreen extends StatelessWidget {
     return const SizedBox();
   }
 
-  // =========================================================================
-  // LOGIKA UPDATE STATUS DATABASE (MODIFIED)
-  // =========================================================================
-  Future<void> updateStatus(BuildContext context, String newStatus, Map<String, dynamic> pemData) async {
-    try {
-      // 1. Ambil Info Barang dari Database 'alat' untuk cek Stok
-      // Kita cari berdasarkan 'kode_barang' yang ada di data peminjaman
-      var alatQuery = await FirebaseFirestore.instance
-          .collection('alat')
-          .where('kode', isEqualTo: pemData['kode_barang'])
-          .limit(1)
-          .get();
+  // ================= UPDATE STATUS =================
+  Future<void> _updateStatus(BuildContext context, String newStatus) async {
+    await FirebaseFirestore.instance
+        .collection("peminjaman")
+        .doc(widget.data.id)
+        .update({
+      "status": newStatus,
+      "updated_at": FieldValue.serverTimestamp(),
+    });
 
-      if (alatQuery.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data alat tidak ditemukan di gudang!")));
-        return;
-      }
+    if (!mounted) return;
 
-      var alatDoc = alatQuery.docs.first;
-      int stokGudang = (alatDoc['jumlah'] as num).toInt();
-      int jumlahPinjam = (pemData['jumlah_pinjam'] as num? ?? 1).toInt();
+    // ===== SETUJUI =====
+    if (newStatus == 'disetujui') {
+      Navigator.pop(context);
+      return;
+    }
 
-      // 2. LOGIKA PERUBAHAN STOK
-      if (newStatus == 'disetujui') {
-        // Cek Stok Cukup Gak?
-        if (stokGudang >= jumlahPinjam) {
-          // KURANGI STOK
-          await alatDoc.reference.update({
-            'jumlah': stokGudang - jumlahPinjam
-          });
-          
-          // Update Status Peminjaman
-          await FirebaseFirestore.instance.collection("peminjaman").doc(data.id).update({
-            "status": newStatus,
-            "updated_at": FieldValue.serverTimestamp(),
-          });
+    // ===== SELESAI (ANIMASI) =====
+    if (newStatus == 'selesai') {
+      setState(() => showOverlay = true);
 
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Disetujui. Stok alat berkurang."), backgroundColor: Colors.green));
-            Navigator.pop(context);
-          }
-        } else {
-          // Stok Kurang
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: Stok sisa $stokGudang, diminta $jumlahPinjam"), backgroundColor: Colors.red));
-          }
-          return; // Jangan update status
-        }
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
 
-      } else if (newStatus == 'selesai') {
-        // BARANG KEMBALI -> TAMBAH STOK
-        await alatDoc.reference.update({
-          'jumlah': stokGudang + jumlahPinjam
-        });
+      setState(() => showCheck = true);
 
-        // Update Status Peminjaman
-        await FirebaseFirestore.instance.collection("peminjaman").doc(data.id).update({
-          "status": newStatus,
-          "updated_at": FieldValue.serverTimestamp(),
-        });
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
 
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Selesai. Stok alat dikembalikan."), backgroundColor: Colors.blue));
-          Navigator.pop(context);
-        }
+      Navigator.pop(context, true);
+      return;
+    }
 
-      } else {
-        // KASUS DITOLAK (Stok Tidak Berubah)
-        await FirebaseFirestore.instance.collection("peminjaman").doc(data.id).update({
-          "status": newStatus,
-          "updated_at": FieldValue.serverTimestamp(),
-        });
+    // ===== TOLAK =====
+    if (newStatus == 'ditolak') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Berhasil menolak!"),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 1),
+        ),
+      );
 
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Status diperbarui menjadi: $newStatus")));
-          Navigator.pop(context);
-        }
-      }
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
 
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal memperbarui: $e")),
-        );
-      }
+      Navigator.pop(context, true);
     }
   }
 
-  // ================= FORMAT TANGGAL =================
-  String formatTanggal(Timestamp t) {
-    final date = t.toDate();
-    const bulan = [
-      "",
-      "Januari",
-      "Februari",
-      "Maret",
-      "April",
-      "Mei",
-      "Juni",
-      "Juli",
-      "Agustus",
-      "September",
-      "Oktober",
-      "November",
-      "Desember",
-    ];
-    return "${date.day} ${bulan[date.month]} ${date.year}";
+  // ================= UI HELPER =================
+  Widget _actionButton(String text, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
   }
+
+  Widget _rowInfo(String l, String r) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("$l :"),
+            Text(r, style: const TextStyle(fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+
+  String _format(Timestamp? t) =>
+      t == null
+          ? '-'
+          : "${t.toDate().day}/${t.toDate().month}/${t.toDate().year}";
+
+  BoxDecoration _cardDecoration() => BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      );
+
+  // ================= HEADER =================
+  Widget _buildHeader(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
+          ),
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(40),
+            bottomRight: Radius.circular(40),
+          ),
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            const Expanded(
+              child: Text(
+                "Detail Permintaan",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 48),
+          ],
+        ),
+      );
 }

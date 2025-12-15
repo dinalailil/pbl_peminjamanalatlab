@@ -45,7 +45,7 @@ class DaftarPermintaanScreen extends StatelessWidget {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('peminjaman')
-                  .orderBy("created_at", descending: true)
+                  .where("status", whereIn: ["diajukan", "disetujui"])
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -69,29 +69,25 @@ class DaftarPermintaanScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final pem = data[index];
                     final pemData = pem.data() as Map<String, dynamic>;
-                    
-                    // Ambil status mentah
+
                     final status = pemData['status'] ?? 'diajukan';
 
                     return Column(
                       children: [
                         GestureDetector(
                           onTap: () {
-                            // ➜ Navigasi ke halaman detail
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => DetailPermintaanScreen(
-                                  data: pem,
-                                ),
+                                builder: (context) =>
+                                    DetailPermintaanScreen(data: pem),
                               ),
                             );
                           },
                           child: _buildPermintaanCard(
-                            // Ganti parameter sesuai kebutuhan UI
                             status: status,
                             kode: pemData['kode_barang'] ?? "-",
-                            ruang: pemData['nama_barang'] ?? "-",
+                            namalab: pemData[''] ?? "-",
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -102,13 +98,13 @@ class DaftarPermintaanScreen extends StatelessWidget {
               },
             ),
           ),
-          
-          // Tambahkan Bottom Bar agar UI lebih lengkap
+
+          // ================== BOTTOM BAR ==================
           Container(
             margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF764BA2), // Warna ungu
+              color: const Color(0xFF764BA2),
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
@@ -132,14 +128,13 @@ class DaftarPermintaanScreen extends StatelessWidget {
     );
   }
 
-  // ================== HELPER STATUS ==================
-  // Mengambil teks status utama untuk baris pertama
+  // ================== STATUS TEXT ==================
   String _getStatusDisplayText(String status) {
     switch (status) {
       case 'diajukan':
         return 'Menunggu Persetujuan';
       case 'disetujui':
-        return 'Sedang Diproses';
+        return 'Menunggu Persetujuan';
       case 'ditolak':
         return 'Ditolak';
       case 'selesai':
@@ -149,16 +144,11 @@ class DaftarPermintaanScreen extends StatelessWidget {
     }
   }
 
-  // Menentukan apakah badge "Proses" perlu ditampilkan
-  bool _showProsesBadge(String status) {
-    return status == 'disetujui';
-  }
-
-  // ================== CARD COMPONENT (REVISI) ==================
+  // ================== CARD ==================
   Widget _buildPermintaanCard({
     required String status,
     required String kode,
-    required String ruang,
+    required String namalab,
   }) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -175,7 +165,11 @@ class DaftarPermintaanScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.compare_arrows_sharp, color: Color(0xFF764BA2), size: 36),
+          const Icon(
+            Icons.compare_arrows_sharp,
+            color: Color(0xFF764BA2),
+            size: 36,
+          ),
 
           const SizedBox(width: 18),
 
@@ -193,98 +187,58 @@ class DaftarPermintaanScreen extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    _buildStatusBadge(status),   // ← ✔ Badge baru
+                    _buildStatusBadge(status), // ✔ hanya tampil jika diajukan
                   ],
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text("Kode : $kode", style: const TextStyle(fontSize: 13)),
                 const SizedBox(height: 4),
-
                 Text(
-                  "Ruang : $ruang",
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  "Ruang : $namalab",
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                  ),
                 ),
               ],
             ),
           ),
 
-          const Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                "Detail",
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.black,
-                  decoration: TextDecoration.underline,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          const Text(
+            "Detail",
+            style: TextStyle(
+              fontSize: 12,
+              decoration: TextDecoration.underline,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
 
-
+  // ================== BADGE ==================
   Widget _buildStatusBadge(String status) {
-    Color bg;
-    String text;
-
-    if (status == 'disetujui') {
-      bg = Colors.green;
-      text = "Proses";
-    } else if (status == 'ditolak') {
-      bg = Colors.red;
-      text = "Gagal";
-    } else if (status == 'selesai') {
-      bg = Colors.blue;
-      text = "Selesai";
-    } else {
-      return const SizedBox(); // Tidak tampil jika diajukan
+    // ✔ Badge HANYA muncul saat status = disetujui
+    if (status != 'disetujui') {
+      return const SizedBox();
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: bg,
+        color: Colors.green,
         borderRadius: BorderRadius.circular(15),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
+      child: const Text(
+        "Proses",
+        style: TextStyle(
           color: Colors.white,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
       ),
     );
-  }
-
-  // ================== Format Tanggal (Tidak berubah) ==================
-  String formatTanggal(Timestamp t) {
-    final date = t.toDate();
-    return "${date.day} ${_bulan(date.month)} ${date.year}";
-  }
-
-  String _bulan(int m) {
-    const bulan = [
-      "",
-      "Januari",
-      "Februari",
-      "Maret",
-      "April",
-      "Mei",
-      "Juni",
-      "Juli",
-      "Agustus",
-      "September",
-      "Oktober",
-      "November",
-      "Desember",
-    ];
-    return bulan[m];
   }
 }
