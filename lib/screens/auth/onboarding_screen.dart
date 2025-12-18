@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart'; 
+import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -13,24 +13,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
 
   // Warna Tema (Ungu Labify)
-  final Color primaryColor = const Color(0xFF6C63FF); 
+  final Color primaryColor = const Color(0xFF6C63FF);
   final Color darkPurple = const Color(0xFF4834DF);
 
   final List<Map<String, String>> _onboardingData = [
     {
-      "image": "images/ilustration.png", 
+      "image": "images/ilustration.png",
       "title": "Selamat Datang\ndi Labify",
-      "desc": "Aplikasi peminjaman alat laboratorium terlengkap dan termudah untuk mahasiswa Polinema."
+      "desc":
+          "Aplikasi peminjaman alat laboratorium terlengkap dan termudah untuk mahasiswa Polinema.",
     },
     {
-      "image": "images/boom.png", 
+      "image": "images/boom.png",
       "title": "Pinjam Alat\nTanpa Ribet",
-      "desc": "Cukup cari alat, ajukan peminjaman, dan tunggu persetujuan admin. Semua dalam genggaman!"
+      "desc":
+          "Cukup cari alat, ajukan peminjaman, dan tunggu persetujuan admin. Semua dalam genggaman!",
     },
     {
-      "image": "images/log.png", 
+      "image": "images/log.png",
       "title": "Siap Memulai\nPetualangan?",
-      "desc": "Bergabunglah sekarang dan nikmati kemudahan akses fasilitas laboratorium kampus."
+      "desc":
+          "Bergabunglah sekarang dan nikmati kemudahan akses fasilitas laboratorium kampus.",
     },
   ];
 
@@ -45,10 +48,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             top: -50,
             right: -50,
             child: Container(
-              width: 200, height: 200,
+              width: 200,
+              height: 200,
               decoration: BoxDecoration(
                 color: primaryColor.withOpacity(0.05), // Ungu sangat tipis
-                shape: BoxShape.circle
+                shape: BoxShape.circle,
               ),
             ),
           ),
@@ -56,10 +60,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             bottom: 100,
             left: -30,
             child: Container(
-              width: 150, height: 150,
+              width: 150,
+              height: 150,
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.05), 
-                shape: BoxShape.circle
+                color: primaryColor.withOpacity(0.05),
+                shape: BoxShape.circle,
               ),
             ),
           ),
@@ -74,13 +79,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Padding(
                     padding: const EdgeInsets.only(right: 20, top: 10),
                     child: TextButton(
+                      key: const Key('onboarding_skip'),
                       onPressed: () => _goToLogin(),
                       child: Text(
                         "Lewati",
                         style: TextStyle(
                           color: primaryColor, // Warna Ungu
-                          fontSize: 16, 
-                          fontWeight: FontWeight.w600
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -119,9 +125,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                       // TOMBOL NEXT (Background Ungu, Teks Putih)
                       ElevatedButton(
+                        key: const Key('onboarding_next'),
                         onPressed: () {
                           if (_currentPage == _onboardingData.length - 1) {
-                            _goToLogin(); 
+                            _goToLogin();
                           } else {
                             _pageController.nextPage(
                               duration: const Duration(milliseconds: 300),
@@ -133,8 +140,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           backgroundColor: primaryColor, // Tombol Ungu Solid
                           foregroundColor: Colors.white, // Teks Putih
                           elevation: 5,
-                          shadowColor: primaryColor.withOpacity(0.4), // Bayangan ungu
-                          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
+                          shadowColor: primaryColor.withOpacity(
+                            0.4,
+                          ), // Bayangan ungu
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 25,
+                            vertical: 15,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -143,8 +155,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              _currentPage == _onboardingData.length - 1 ? "Mulai" : "Lanjut",
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              _currentPage == _onboardingData.length - 1
+                                  ? "Mulai"
+                                  : "Lanjut",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             const Icon(Icons.arrow_forward, size: 20),
@@ -169,21 +186,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildPageContent({required String image, required String title, required String desc}) {
+  Widget _buildPageContent({
+    required String image,
+    required String title,
+    required String desc,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Gambar (Tanpa Shadow kotak, agar bersih di background putih)
-          Image.asset(
-            image, 
-            height: 280,
-            fit: BoxFit.contain,
-          ),
-          
+          Image.asset(image, height: 280, fit: BoxFit.contain),
+
           const SizedBox(height: 50),
-          
+
           // Judul (Warna Hitam/Ungu Gelap)
           Text(
             title,
@@ -195,9 +212,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               height: 1.2,
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Deskripsi (Warna Abu-abu)
           Text(
             desc,
@@ -218,8 +235,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return GestureDetector(
       onTap: () {
         _pageController.animateToPage(
-          index, 
-          duration: const Duration(milliseconds: 300), 
+          index,
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
       },
@@ -228,10 +245,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         margin: const EdgeInsets.only(right: 8),
         height: 8,
         // Titik aktif lebih panjang
-        width: _currentPage == index ? 30 : 8, 
+        width: _currentPage == index ? 30 : 8,
         decoration: BoxDecoration(
           // Aktif = Ungu, Tidak Aktif = Abu-abu muda
-          color: _currentPage == index ? primaryColor : Colors.grey[300], 
+          color: _currentPage == index ? primaryColor : Colors.grey[300],
           borderRadius: BorderRadius.circular(4),
         ),
       ),

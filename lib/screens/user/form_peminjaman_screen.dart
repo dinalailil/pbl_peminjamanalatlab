@@ -5,10 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FormPeminjamanScreen extends StatefulWidget {
   final QueryDocumentSnapshot data;
 
-  const FormPeminjamanScreen({
-    super.key,
-    required this.data,
-  });
+  const FormPeminjamanScreen({super.key, required this.data});
 
   @override
   State<FormPeminjamanScreen> createState() => _FormPeminjamanScreenState();
@@ -26,7 +23,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   bool loading = false;
 
   // Variabel untuk menyimpan sisa stok yang benar-benar bisa dipinjam
-  int stokBisaDipinjam = 0; 
+  int stokBisaDipinjam = 0;
 
   // ... (Fungsi pickDate sama seperti sebelumnya) ...
   Future<void> pickDate(BuildContext context, bool isPinjam) async {
@@ -38,23 +35,29 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     );
     if (picked != null) {
       setState(() {
-        if (isPinjam) tglPinjam = picked;
-        else tglKembali = picked;
+        if (isPinjam)
+          tglPinjam = picked;
+        else
+          tglKembali = picked;
       });
     }
   }
 
-Future<void> submit() async {
+  Future<void> submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (tglPinjam == null || tglKembali == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lengkapi tanggal")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Lengkapi tanggal")));
       return;
     }
 
     // Validasi Terakhir: Cek apakah stok virtual cukup?
     if (stokBisaDipinjam < jumlahPinjam) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Maaf! Stok rebutan. Sisa tersedia: $stokBisaDipinjam")),
+        SnackBar(
+          content: Text("Maaf! Stok rebutan. Sisa tersedia: $stokBisaDipinjam"),
+        ),
       );
       return;
     }
@@ -69,42 +72,46 @@ Future<void> submit() async {
         int stokFisik = (alatSnap['jumlah'] ?? 0) as int;
 
         // 2. Validasi Hard Limit Stok Fisik
-        if (stokFisik < jumlahPinjam) { 
-             throw Exception("Stok Gudang Habis!"); 
+        if (stokFisik < jumlahPinjam) {
+          throw Exception("Stok Gudang Habis!");
         }
 
         // 3. Buat Request (Tanpa Kurangi Stok Fisik)
         tx.set(FirebaseFirestore.instance.collection("peminjaman").doc(), {
           "user_uid": FirebaseAuth.instance.currentUser!.uid,
-          
+
           "alat_id": widget.data.id,
           "kode_barang": widget.data['kode'],
           "nama_barang": widget.data['nama'],
           "gambar": widget.data['gambar'] ?? "",
-          
+
           // ⭐ TAMBAHAN: AMBIL ARRAY LAB DARI DATA BARANG
-          "lab": widget.data['lab'] ?? [], 
+          "lab": widget.data['lab'] ?? [],
 
           "nama_peminjam": namaController.text,
           "keperluan": keperluanController.text,
           "jumlah_pinjam": jumlahPinjam,
-          
+
           "tgl_pinjam": Timestamp.fromDate(tglPinjam!),
           "tgl_kembali": Timestamp.fromDate(tglKembali!),
-          
+
           "status": "diajukan",
           "created_at": FieldValue.serverTimestamp(),
         });
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil diajukan!")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Berhasil diajukan!")));
         Navigator.pop(context);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Gagal: $e")));
     }
-    
+
     if (mounted) setState(() => loading = false);
   }
 
@@ -117,7 +124,10 @@ Future<void> submit() async {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: warnaUngu,
-        title: Text("Peminjaman (${map['kode']})", style: const TextStyle(color: Colors.white)),
+        title: Text(
+          "Peminjaman (${map['kode']})",
+          style: const TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
@@ -128,11 +138,16 @@ Future<void> submit() async {
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('peminjaman')
-                .where('nama_barang', isEqualTo: map['nama']) // Cari barang yg sama
-                .where('status', isEqualTo: 'diajukan') // Cari yg statusnya booking
+                .where(
+                  'nama_barang',
+                  isEqualTo: map['nama'],
+                ) // Cari barang yg sama
+                .where(
+                  'status',
+                  isEqualTo: 'diajukan',
+                ) // Cari yg statusnya booking
                 .snapshots(),
             builder: (context, snapshot) {
-              
               // 1. Hitung Total Booking Orang Lain
               int totalBooking = 0;
               if (snapshot.hasData) {
@@ -147,24 +162,39 @@ Future<void> submit() async {
 
               return ListView(
                 children: [
-                  Text(map['nama'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    map['nama'],
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  
+
                   // --- INFO STOK YANG JUJUR ---
                   Container(
                     padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade50,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.orange)
+                      border: Border.all(color: Colors.orange),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Sisa Stok Tersedia:", style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          "Sisa Stok Tersedia:",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         Text(
                           "$stokBisaDipinjam", // Tampilkan Stok Virtual
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: stokBisaDipinjam > 0 ? Colors.green : Colors.red),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: stokBisaDipinjam > 0
+                                ? Colors.green
+                                : Colors.red,
+                          ),
                         ),
                       ],
                     ),
@@ -174,43 +204,73 @@ Future<void> submit() async {
                       padding: const EdgeInsets.only(top: 5),
                       child: Text(
                         "⚠️ Ada $totalBooking barang sedang dalam antrian (booking)",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12, fontStyle: FontStyle.italic),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ),
 
                   const SizedBox(height: 25),
 
                   TextFormField(
+                    key: const Key('nama_peminjam'),
                     controller: namaController,
-                    decoration: const InputDecoration(labelText: "Nama Peminjam", border: UnderlineInputBorder()),
+                    decoration: const InputDecoration(
+                      labelText: "Nama Peminjam",
+                      border: UnderlineInputBorder(),
+                    ),
                     validator: (v) => v!.isEmpty ? "Isi nama" : null,
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
+                    key: const Key('catatan_pinjam'),
                     controller: keperluanController,
-                    decoration: const InputDecoration(labelText: "Keperluan", border: UnderlineInputBorder()),
+                    decoration: const InputDecoration(
+                      labelText: "Keperluan",
+                      border: UnderlineInputBorder(),
+                    ),
                     validator: (v) => v!.isEmpty ? "Isi keperluan" : null,
                   ),
                   const SizedBox(height: 25),
 
-                  const Text("Jumlah Pinjam", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Jumlah Pinjam",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 10),
-                  
+
                   // CONTROLLER JUMLAH
                   Container(
-                    decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade400))),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey.shade400),
+                      ),
+                    ),
                     child: Row(
                       children: [
                         IconButton(
-                          onPressed: jumlahPinjam > 1 ? () => setState(() => jumlahPinjam--) : null,
+                          onPressed: jumlahPinjam > 1
+                              ? () => setState(() => jumlahPinjam--)
+                              : null,
                           icon: const Icon(Icons.remove_circle_outline),
                         ),
                         Expanded(
-                          child: Text(jumlahPinjam.toString(), textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            jumlahPinjam.toString(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                         IconButton(
                           // Batasi Max Pinjam sesuai Stok Virtual, bukan Stok Fisik
-                          onPressed: jumlahPinjam < stokBisaDipinjam ? () => setState(() => jumlahPinjam++) : null,
+                          onPressed: jumlahPinjam < stokBisaDipinjam
+                              ? () => setState(() => jumlahPinjam++)
+                              : null,
                           icon: const Icon(Icons.add_circle_outline),
                         ),
                       ],
@@ -219,25 +279,46 @@ Future<void> submit() async {
 
                   const SizedBox(height: 25),
                   ListTile(
-                    title: Text(tglPinjam == null ? "Pilih Tanggal Pinjam" : "Pinjam: ${tglPinjam!.day}/${tglPinjam!.month}"),
+                    key: const Key('tgl_mulai'),
+                    title: Text(
+                      tglPinjam == null
+                          ? "Pilih Tanggal Pinjam"
+                          : "Pinjam: ${tglPinjam!.day}/${tglPinjam!.month}",
+                    ),
                     trailing: const Icon(Icons.calendar_month),
                     onTap: () => pickDate(context, true),
                   ),
                   ListTile(
-                    title: Text(tglKembali == null ? "Pilih Tanggal Kembali" : "Kembali: ${tglKembali!.day}/${tglKembali!.month}"),
+                    key: const Key('tgl_akhir'),
+                    title: Text(
+                      tglKembali == null
+                          ? "Pilih Tanggal Kembali"
+                          : "Kembali: ${tglKembali!.day}/${tglKembali!.month}",
+                    ),
                     trailing: const Icon(Icons.calendar_month),
                     onTap: () => pickDate(context, false),
                   ),
                   const SizedBox(height: 35),
                   ElevatedButton(
+                    key: const Key('btn_submit_pinjam'),
                     // Disable tombol jika stok virtual habis
-                    onPressed: (loading || stokBisaDipinjam == 0) ? null : submit,
-                    style: ElevatedButton.styleFrom(backgroundColor: warnaUngu, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15)),
-                    child: Text(stokBisaDipinjam == 0 ? "Stok Habis / Full Booked" : "Ajukan Pinjaman"),
+                    onPressed: (loading || stokBisaDipinjam == 0)
+                        ? null
+                        : submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: warnaUngu,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    child: Text(
+                      stokBisaDipinjam == 0
+                          ? "Stok Habis / Full Booked"
+                          : "Ajukan Pinjaman",
+                    ),
                   ),
                 ],
               );
-            }
+            },
           ),
         ),
       ),

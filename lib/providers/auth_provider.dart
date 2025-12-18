@@ -11,9 +11,9 @@ class AuthProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // --- LOGIC BARU UNTUK UI BARU ---
-  
+
   // 1. Status untuk toggle (true = Halaman Login, false = Halaman Register)
-  bool _isLogin = true; 
+  bool _isLogin = true;
   bool get isLogin => _isLogin;
 
   // 2. Status loading (sama seperti sebelumnya)
@@ -59,11 +59,19 @@ class AuthProvider with ChangeNotifier {
         await _handleLogin(context, _emailCtrl.text, _passCtrl.text);
       } else {
         // --- PROSES REGISTER (Sama seperti kode lama kita) ---
-        await _handleRegister(context, _namaCtrl.text, _emailCtrl.text, _passCtrl.text);
+        await _handleRegister(
+          context,
+          _namaCtrl.text,
+          _emailCtrl.text,
+          _passCtrl.text,
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       _isLoading = false;
@@ -73,16 +81,24 @@ class AuthProvider with ChangeNotifier {
 
   // --- Helper Functions (Logika lama kita pindah ke sini) ---
 
-  Future<void> _handleRegister(BuildContext context, String nama, String email, String password) async {
+  Future<void> _handleRegister(
+    BuildContext context,
+    String nama,
+    String email,
+    String password,
+  ) async {
     String? error = await _service.register(
-      email: email, 
-      password: password, 
-      nama: nama
+      email: email,
+      password: password,
+      nama: nama,
     );
 
     if (error == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Registrasi Berhasil! Silakan Login."), backgroundColor: Color.fromARGB(255, 175, 76, 160)),
+        const SnackBar(
+          content: Text("Registrasi Berhasil! Silakan Login."),
+          backgroundColor: Color.fromARGB(255, 175, 76, 160),
+        ),
       );
       toggleLogin(); // Balik ke halaman login setelah sukses register
     } else {
@@ -90,7 +106,11 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _handleLogin(BuildContext context, String email, String password) async {
+  Future<void> _handleLogin(
+    BuildContext context,
+    String email,
+    String password,
+  ) async {
     String? error = await _service.login(email: email, password: password);
 
     if (error != null) {
@@ -99,16 +119,22 @@ class AuthProvider with ChangeNotifier {
 
     User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
-      DocumentSnapshot doc = await _firestore.collection('users').doc(currentUser.uid).get();
+      DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
       if (doc.exists) {
         String role = doc.get('role');
         if (role == 'admin') {
-           Navigator.pushReplacementNamed(context, '/admin-dashboard');
+          Navigator.pushReplacementNamed(context, '/admin-dashboard');
         } else {
-           Navigator.pushReplacementNamed(context, '/user-dashboard');
+          Navigator.pushReplacementNamed(context, '/user-dashboard');
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Login Berhasil!"), backgroundColor: Color.fromARGB(255, 210, 128, 231)),
+          const SnackBar(
+            content: Text("Login Berhasil!"),
+            backgroundColor: Color.fromARGB(255, 210, 128, 231),
+          ),
         );
       } else {
         throw Exception("Data user tidak ditemukan di Database!");

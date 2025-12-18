@@ -41,7 +41,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
       body: Column(
         children: [
           // ================= HEADER =================
-Container(
+          Container(
             padding: const EdgeInsets.fromLTRB(20, 70, 20, 30),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -86,7 +86,10 @@ Container(
 
                 // Search Bar
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
@@ -139,21 +142,31 @@ Container(
                 if (searchQuery.isNotEmpty) {
                   docs = docs.where((item) {
                     var data = item.data() as Map<String, dynamic>;
-                    return (data['nama'] ?? "").toString().toLowerCase().contains(searchQuery);
+                    return (data['nama'] ?? "")
+                        .toString()
+                        .toLowerCase()
+                        .contains(searchQuery);
                   }).toList();
                 }
 
                 if (docs.isEmpty) {
                   return const Center(
-                    child: Text("Tidak ada barang", style: TextStyle(fontSize: 16)),
+                    child: Text(
+                      "Tidak ada barang",
+                      style: TextStyle(fontSize: 16),
+                    ),
                   );
                 }
 
                 return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.75, // Aspect ratio disesuaikan agar muat overlay
+                    childAspectRatio:
+                        0.75, // Aspect ratio disesuaikan agar muat overlay
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
@@ -169,31 +182,43 @@ Container(
                     return StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('peminjaman')
-                          .where('nama_barang', isEqualTo: data['nama']) // Cari booking barang ini
-                          .where('status', isEqualTo: 'diajukan') // Hanya yang statusnya booking
+                          .where(
+                            'nama_barang',
+                            isEqualTo: data['nama'],
+                          ) // Cari booking barang ini
+                          .where(
+                            'status',
+                            isEqualTo: 'diajukan',
+                          ) // Hanya yang statusnya booking
                           .snapshots(),
                       builder: (context, bookingSnap) {
-                        
                         // 1. Hitung Stok Fisik (Gudang)
                         int stokFisik = (data['jumlah'] as num? ?? 0).toInt();
-                        
+
                         // 2. Hitung Total Booking (Antrian)
                         int totalBooking = 0;
                         if (bookingSnap.hasData) {
                           for (var doc in bookingSnap.data!.docs) {
-                            totalBooking += (doc['jumlah_pinjam'] as num? ?? 0).toInt();
+                            totalBooking += (doc['jumlah_pinjam'] as num? ?? 0)
+                                .toInt();
                           }
                         }
 
                         // 3. Hitung Stok Virtual (Yang Tampil ke User)
                         int stokTersedia = stokFisik - totalBooking;
-                        
+
                         // Tentukan apakah HABIS atau TERSEDIA
                         bool isHabis = stokTersedia <= 0;
                         // Jangan tampilkan angka minus
                         int displayStock = stokTersedia > 0 ? stokTersedia : 0;
 
-                        return _buildItemCard(context, item, data, displayStock, isHabis);
+                        return _buildItemCard(
+                          context,
+                          item,
+                          data,
+                          displayStock,
+                          isHabis,
+                        );
                       },
                     );
                   },
@@ -220,18 +245,27 @@ Container(
       selectedColor: const Color(0xff7f5eff).withOpacity(0.2),
       labelStyle: TextStyle(
         color: selectedFilter == label ? const Color(0xff7f5eff) : Colors.black,
-        fontWeight: selectedFilter == label ? FontWeight.bold : FontWeight.normal,
+        fontWeight: selectedFilter == label
+            ? FontWeight.bold
+            : FontWeight.normal,
       ),
     );
   }
 
- // =======================================================================
+  // =======================================================================
   // KARTU BARANG (UPDATED - FIX ERROR MERAH)
   // =======================================================================
-  Widget _buildItemCard(BuildContext context, QueryDocumentSnapshot doc, Map<String, dynamic> data, int stokRealtime, bool isHabis) {
+  Widget _buildItemCard(
+    BuildContext context,
+    QueryDocumentSnapshot doc,
+    Map<String, dynamic> data,
+    int stokRealtime,
+    bool isHabis,
+  ) {
     return InkWell(
+      key: Key('item_${data['kode']}'),
       // --- PERBAIKAN UTAMA DI SINI ---
-      onTap: isHabis 
+      onTap: isHabis
           ? null // Kalau habis, tidak bisa diklik
           : () {
               showDialog(
@@ -243,7 +277,7 @@ Container(
                 ),
               );
             },
-      
+
       // ... (Sisa kode UI tampilan kartu di bawah ini biarkan saja) ...
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -256,7 +290,7 @@ Container(
               spreadRadius: 2,
               blurRadius: 8,
               offset: const Offset(0, 2),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -266,11 +300,17 @@ Container(
                 alignment: Alignment.center,
                 children: [
                   Opacity(
-                    opacity: isHabis ? 0.5 : 1.0, 
+                    opacity: isHabis ? 0.5 : 1.0,
                     child: Center(
-                      child: data['gambar'] != null && data['gambar'].toString().isNotEmpty
+                      child:
+                          data['gambar'] != null &&
+                              data['gambar'].toString().isNotEmpty
                           ? Image.network(data['gambar'], fit: BoxFit.contain)
-                          : const Icon(Icons.inventory_2_outlined, size: 60, color: Colors.grey),
+                          : const Icon(
+                              Icons.inventory_2_outlined,
+                              size: 60,
+                              color: Colors.grey,
+                            ),
                     ),
                   ),
                   if (isHabis)
@@ -284,7 +324,11 @@ Container(
                       alignment: Alignment.center,
                       child: const Text(
                         "Habis",
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                 ],
@@ -297,9 +341,9 @@ Container(
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontWeight: FontWeight.bold, 
+                fontWeight: FontWeight.bold,
                 fontSize: 13,
-                color: isHabis ? Colors.grey : Colors.black
+                color: isHabis ? Colors.grey : Colors.black,
               ),
             ),
             const SizedBox(height: 4),
@@ -312,24 +356,31 @@ Container(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "Sisa: $stokRealtime", 
+                  "Sisa: $stokRealtime",
                   style: TextStyle(
-                    fontSize: 12, 
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isHabis ? Colors.red : Colors.black87
+                    color: isHabis ? Colors.red : Colors.black87,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: isHabis ? Colors.red.shade100 : Colors.green.shade100,
+                    color: isHabis
+                        ? Colors.red.shade100
+                        : Colors.green.shade100,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     isHabis ? "Full Booked" : "Tersedia",
                     style: TextStyle(
-                      color: isHabis ? Colors.red.shade700 : Colors.green.shade700,
+                      color: isHabis
+                          ? Colors.red.shade700
+                          : Colors.green.shade700,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),

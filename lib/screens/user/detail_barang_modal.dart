@@ -69,9 +69,9 @@ class DetailBarangModal extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Sisa Stok: $stokVirtual", 
+                      "Sisa Stok: $stokVirtual",
                       style: TextStyle(
-                        fontSize: 14, 
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: stokVirtual > 0 ? Colors.black54 : Colors.red,
                       ),
@@ -79,7 +79,10 @@ class DetailBarangModal extends StatelessWidget {
                     const SizedBox(width: 12),
                     Text(
                       "Kode: $kode",
-                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
                     ),
                   ],
                 ),
@@ -114,7 +117,10 @@ class DetailBarangModal extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: stokVirtual <= 0 // Matikan jika stok virtual habis
+                      key: const Key('btn_pinjam'),
+                      onPressed:
+                          stokVirtual <=
+                              0 // Matikan jika stok virtual habis
                           ? null
                           : () {
                               Navigator.pop(context); // Tutup modal
@@ -135,8 +141,8 @@ class DetailBarangModal extends StatelessWidget {
                       child: Text(
                         stokVirtual <= 0 ? "Full Booked" : "Sewa",
                         style: const TextStyle(
-                          color: Colors.white, 
-                          fontWeight: FontWeight.bold
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),

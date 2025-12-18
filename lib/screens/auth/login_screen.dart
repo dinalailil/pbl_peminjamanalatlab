@@ -16,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    
+
     return Scaffold(
       body: Stack(
         children: [
@@ -69,23 +69,21 @@ class _LoginScreenState extends State<LoginScreen> {
               return SingleChildScrollView(
                 // ConstrainedBox memaksa tinggi minimal setinggi layar
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center, // Rata Tengah Vertikal
+                      mainAxisAlignment:
+                          MainAxisAlignment.center, // Rata Tengah Vertikal
                       children: [
                         // --- LOGO SAJA (Tanpa Teks) ---
                         Image.asset(
-                          'images/logotim.png', 
+                          'images/logotim.png',
                           width: 180, // Ukuran pas (tidak terlalu besar/kecil)
                           height: 180,
                         ),
-                        
-                        const SizedBox(height: 10), // Jarak aman ke Form
 
+                        const SizedBox(height: 10), // Jarak aman ke Form
                         // --- KARTU FORM ---
                         Container(
                           padding: const EdgeInsets.all(30),
@@ -118,51 +116,77 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                 // Field Nama (Register Only)
                                 if (!authProvider.isLogin) ...[
-                                  TextfieldNamaWidget(controller: authProvider.namaCtrl),
+                                  TextfieldNamaWidget(
+                                    controller: authProvider.namaCtrl,
+                                    fieldKey: const Key('register_nama'),
+                                  ),
                                   const SizedBox(height: 16),
                                 ],
 
                                 // Field Email
-                                TextfieldEmailWidget(controller: authProvider.emailCtrl),
+                                TextfieldEmailWidget(
+                                  controller: authProvider.emailCtrl,
+                                  fieldKey: authProvider.isLogin
+                                      ? const Key('login_email')
+                                      : const Key('register_email'),
+                                ),
                                 const SizedBox(height: 16),
 
-                                
-                                TextfieldPasswordWidget(controller: authProvider.passCtrl),
-                                
-                                
+                                TextfieldPasswordWidget(
+                                  controller: authProvider.passCtrl,
+                                  fieldKey: authProvider.isLogin
+                                      ? const Key('login_password')
+                                      : const Key('register_password'),
+                                ),
 
                                 const SizedBox(height: 30),
 
                                 // Tombol Utama
                                 authProvider.isLoading
-                                    ? const Center(child: CircularProgressIndicator())
+                                    ? const Center(
+                                        child: CircularProgressIndicator(),
+                                      )
                                     : Container(
                                         width: double.infinity,
                                         height: 50,
                                         decoration: BoxDecoration(
                                           gradient: const LinearGradient(
-                                            colors: [Color(0xFF8E78FF), Color(0xFF764BA2)],
+                                            colors: [
+                                              Color(0xFF8E78FF),
+                                              Color(0xFF764BA2),
+                                            ],
                                           ),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: const Color(0xFFDD2476).withOpacity(0.4),
+                                              color: const Color(
+                                                0xFFDD2476,
+                                              ).withOpacity(0.4),
                                               blurRadius: 10,
                                               offset: const Offset(0, 5),
-                                            )
+                                            ),
                                           ],
                                         ),
                                         child: ElevatedButton(
-                                          onPressed: () => authProvider.submit(context),
+                                          key: authProvider.isLogin
+                                              ? const Key('btn_login')
+                                              : const Key('btn_register'),
+                                          onPressed: () =>
+                                              authProvider.submit(context),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.transparent,
                                             shadowColor: Colors.transparent,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                           ),
                                           child: Text(
-                                            authProvider.isLogin ? "Masuk" : "Daftar",
+                                            authProvider.isLogin
+                                                ? "Masuk"
+                                                : "Daftar",
                                             style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
@@ -183,15 +207,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              authProvider.isLogin 
-                                ? "Belum punya akun? " 
-                                : "Sudah punya akun? ",
-                              style: const TextStyle(color: Colors.white70, fontSize: 15),
+                              authProvider.isLogin
+                                  ? "Belum punya akun? "
+                                  : "Sudah punya akun? ",
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 15,
+                              ),
                             ),
                             GestureDetector(
                               onTap: () => authProvider.toggleLogin(),
                               child: Text(
-                                authProvider.isLogin ? "Daftar Sekarang" : "Login Disini",
+                                authProvider.isLogin
+                                    ? "Daftar Sekarang"
+                                    : "Login Disini",
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -209,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               );
-            }
+            },
           ),
         ],
       ),

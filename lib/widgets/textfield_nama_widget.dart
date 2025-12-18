@@ -2,23 +2,29 @@ import 'package:flutter/material.dart';
 
 class TextfieldNamaWidget extends StatelessWidget {
   final TextEditingController controller;
-  
-  const TextfieldNamaWidget({super.key, required this.controller});
+  final Key? fieldKey;
+
+  const TextfieldNamaWidget({
+    super.key,
+    required this.controller,
+    this.fieldKey,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      key: fieldKey,
       controller: controller,
       // PENTING: Ubah warna teks jadi Hitam (biar kelihatan di background putih)
-      style: const TextStyle(color: Colors.black87), 
-      
+      style: const TextStyle(color: Colors.black87),
+
       decoration: InputDecoration(
         labelText: "Nama Lengkap", // Label kita ubah jadi Nama
         labelStyle: TextStyle(color: Colors.grey[600]),
-        
+
         // Icon kita ubah jadi gambar Orang (Person)
-        prefixIcon: Icon(Icons.person_outline, color: Colors.blue[800]), 
-        
+        prefixIcon: Icon(Icons.person_outline, color: Colors.blue[800]),
+
         // Style di bawah ini sama persis dengan Email Widget baru
         filled: true,
         fillColor: Colors.grey[100], // Warna abu muda
@@ -27,8 +33,8 @@ class TextfieldNamaWidget extends StatelessWidget {
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-           borderRadius: BorderRadius.circular(12),
-           borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

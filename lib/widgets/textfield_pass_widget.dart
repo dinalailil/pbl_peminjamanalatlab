@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 
 class TextfieldPasswordWidget extends StatefulWidget {
   final TextEditingController controller;
-  
-  const TextfieldPasswordWidget({super.key, required this.controller});
+  final Key? fieldKey;
+
+  const TextfieldPasswordWidget({
+    super.key,
+    required this.controller,
+    this.fieldKey,
+  });
 
   @override
-  State<TextfieldPasswordWidget> createState() => _TextfieldPasswordWidgetState();
+  State<TextfieldPasswordWidget> createState() =>
+      _TextfieldPasswordWidgetState();
 }
 
 class _TextfieldPasswordWidgetState extends State<TextfieldPasswordWidget> {
@@ -16,6 +22,7 @@ class _TextfieldPasswordWidgetState extends State<TextfieldPasswordWidget> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      key: widget.fieldKey,
       controller: widget.controller,
       obscureText: _obscureText, // Gunakan state ini
       style: const TextStyle(color: Colors.black87),
@@ -23,7 +30,7 @@ class _TextfieldPasswordWidgetState extends State<TextfieldPasswordWidget> {
         labelText: "Password",
         labelStyle: TextStyle(color: Colors.grey[600]),
         prefixIcon: Icon(Icons.lock_outline, color: Colors.blue[800]),
-        
+
         // --- ICON MATA (Show/Hide) ---
         suffixIcon: IconButton(
           icon: Icon(
@@ -36,8 +43,8 @@ class _TextfieldPasswordWidgetState extends State<TextfieldPasswordWidget> {
             });
           },
         ),
-        // -----------------------------
 
+        // -----------------------------
         filled: true,
         fillColor: Colors.grey[100],
         border: OutlineInputBorder(
@@ -45,8 +52,8 @@ class _TextfieldPasswordWidgetState extends State<TextfieldPasswordWidget> {
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-           borderRadius: BorderRadius.circular(12),
-           borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
