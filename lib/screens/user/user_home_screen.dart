@@ -389,6 +389,7 @@ Future<String?> pilihLaboratorium(BuildContext context) async {
                   final namaLab = lab['nama'] ?? "-";
 
                   return InkWell(
+                    key: index == 0 ? const Key('item_alat_0') : null,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -774,6 +775,7 @@ String _bulan(int m) {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
+                      key: const Key('btn_logout'),
                       onPressed: () => _showLogoutDialog(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red[50],
@@ -999,6 +1001,7 @@ String _bulan(int m) {
   bool isSelected = _selectedIndex == index;
 
   return GestureDetector(
+    key: index == 2 ? const Key('nav_profil') : null,
     onTap: () {
       // === Navigasi disesuaikan ===
 if (index == 1) {

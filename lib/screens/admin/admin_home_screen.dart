@@ -493,78 +493,86 @@ final List<Map<String, String>> _daftarLab = [
           ),
           const SizedBox(width: 18),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      status,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    // ✔ Badge hanya untuk status "disetujui"
-                    if (showStatus)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          "Proses",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  "Kode : $kode",
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-
-                Text(
-                  "Ruang : $namalab",
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.black87,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                GestureDetector(
-                  onTap: onDetailTap,
-                  child: const Text(
-                    "Detail",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 15,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ],
+        Expanded(
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // --- [PERBAIKAN DIMULAI DARI SINI] ---
+          Expanded( // <--- Tambahkan Expanded agar teks tidak menabrak badge
+            child: Text(
+              status,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis, // Tambahkan ini agar teks jadi "..." jika kepanjangan
+              maxLines: 1, 
             ),
           ),
+          
+          const SizedBox(width: 8), // Beri sedikit jarak agar tidak nempel
+
+          // ✔ Badge hanya untuk status "disetujui"
+          if (showStatus)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                "Proses",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          // --- [PERBAIKAN SELESAI] ---
+        ],
+      ),
+
+      const SizedBox(height: 8),
+
+      Text(
+        "Kode : $kode",
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+
+      Text(
+        "Ruang : $namalab",
+        style: const TextStyle(
+          fontSize: 15,
+          color: Colors.black87,
+        ),
+      ),
+
+      const SizedBox(height: 10),
+
+      GestureDetector(
+        onTap: onDetailTap,
+        child: const Text(
+          "Detail",
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 15,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ),
+    ],
+  ),
+),
         ],
       ),
     );

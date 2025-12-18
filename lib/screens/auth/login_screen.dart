@@ -118,16 +118,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                 // Field Nama (Register Only)
                                 if (!authProvider.isLogin) ...[
-                                  TextfieldNamaWidget(controller: authProvider.namaCtrl),
+                                  TextfieldNamaWidget(key: const Key('input_nama'),controller: authProvider.namaCtrl),
                                   const SizedBox(height: 16),
                                 ],
 
                                 // Field Email
-                                TextfieldEmailWidget(controller: authProvider.emailCtrl),
+                                TextfieldEmailWidget(key: const Key('input_email'),controller: authProvider.emailCtrl),
                                 const SizedBox(height: 16),
 
                                 
-                                TextfieldPasswordWidget(controller: authProvider.passCtrl),
+                                TextfieldPasswordWidget(key: const Key('input_password'),controller: authProvider.passCtrl),
                                 
                                 
 
@@ -153,6 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ],
                                         ),
                                         child: ElevatedButton(
+                                          key: const Key('tombol_login'),
                                           onPressed: () => authProvider.submit(context),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.transparent,
@@ -189,6 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: const TextStyle(color: Colors.white70, fontSize: 15),
                             ),
                             GestureDetector(
+                              key: const Key('tombol_pindah_register'),
                               onTap: () => authProvider.toggleLogin(),
                               child: Text(
                                 authProvider.isLogin ? "Daftar Sekarang" : "Login Disini",

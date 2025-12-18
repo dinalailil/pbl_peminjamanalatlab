@@ -181,12 +181,14 @@ Future<void> submit() async {
                   const SizedBox(height: 25),
 
                   TextFormField(
+                    key: const Key('input_nama_peminjam'),
                     controller: namaController,
                     decoration: const InputDecoration(labelText: "Nama Peminjam", border: UnderlineInputBorder()),
                     validator: (v) => v!.isEmpty ? "Isi nama" : null,
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
+                    key: const Key('input_keterangan'),
                     controller: keperluanController,
                     decoration: const InputDecoration(labelText: "Keperluan", border: UnderlineInputBorder()),
                     validator: (v) => v!.isEmpty ? "Isi keperluan" : null,
@@ -219,11 +221,13 @@ Future<void> submit() async {
 
                   const SizedBox(height: 25),
                   ListTile(
+                    key: const Key('btn_tgl_pinjam'),
                     title: Text(tglPinjam == null ? "Pilih Tanggal Pinjam" : "Pinjam: ${tglPinjam!.day}/${tglPinjam!.month}"),
                     trailing: const Icon(Icons.calendar_month),
                     onTap: () => pickDate(context, true),
                   ),
                   ListTile(
+                    key: const Key('btn_tgl_kembali'),
                     title: Text(tglKembali == null ? "Pilih Tanggal Kembali" : "Kembali: ${tglKembali!.day}/${tglKembali!.month}"),
                     trailing: const Icon(Icons.calendar_month),
                     onTap: () => pickDate(context, false),

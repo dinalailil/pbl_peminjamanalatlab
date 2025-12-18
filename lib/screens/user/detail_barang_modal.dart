@@ -114,6 +114,7 @@ class DetailBarangModal extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
+                      key: const Key('btn_sewa'),
                       onPressed: stokVirtual <= 0 // Matikan jika stok virtual habis
                           ? null
                           : () {

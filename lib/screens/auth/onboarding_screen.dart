@@ -74,6 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Padding(
                     padding: const EdgeInsets.only(right: 20, top: 10),
                     child: TextButton(
+                      key: const Key('tombol_skip_onboarding'),
                       onPressed: () => _goToLogin(),
                       child: Text(
                         "Lewati",

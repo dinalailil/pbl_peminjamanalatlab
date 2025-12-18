@@ -2,7 +2,7 @@
     <application
         android:label="pbl_peminjamanalatlab"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/logotim">
         <activity
             android:name=".MainActivity"
             android:exported="true"
